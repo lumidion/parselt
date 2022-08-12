@@ -1,0 +1,8 @@
+*.ts
+!*.d.ts
+.gitignore
+.eslintrc.js
+.eslintignore
+.idea
+prettier.config.js
+tsconfig.json
