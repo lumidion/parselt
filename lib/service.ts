@@ -2,7 +2,7 @@ import fs from 'fs'
 
 import { FileTypes, Indentation, MultiDirectoryInstanceConfig, SingleDirectoryInstanceConfig } from './config'
 import { IScanningError, ScanningErrorsCollector, ScanningErrorTypes } from './errorCollector'
-import { handleFormattingErrors, handleScanningErrors } from './errors'
+import { handleFormattingErrors } from './errors'
 import { getFileAsObject, writeObjectToJson, writeObjectToYaml } from './fileUtils'
 import { logError } from './logger'
 

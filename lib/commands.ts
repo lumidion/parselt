@@ -19,7 +19,7 @@ export const format = (config: ParseltConfig, instanceName?: string) => {
     })
 }
 
-export const scan = (config: ParseltConfig, instanceName?: string): IScanResult => {
+export const scan = (config: ParseltConfig, shouldLogOutput: boolean, instanceName?: string): IScanResult => {
     let errors: IScanningError[] = []
     let warnings: IScanningError[] = []
     config.instances.forEach((instanceConfig) => {
@@ -29,13 +29,28 @@ export const scan = (config: ParseltConfig, instanceName?: string): IScanResult 
         )(() => {
             if (instanceConfig.isMultiDirectory) {
                 const errorCollector = compareDirectories(instanceConfig)
-                handleScanningErrors(errorCollector, instanceConfig.name, instanceConfig.shouldPrintResultSummaryOnly)
+                if (shouldLogOutput) {
+                    console.log('before logging')
+                    handleScanningErrors(
+                        errorCollector,
+                        instanceConfig.name,
+                        instanceConfig.shouldPrintResultSummaryOnly
+                    )
+                }
+
                 const errorings = errorCollector.getAllErrors()
                 errors = errors.concat(errorings)
                 warnings = warnings.concat(errorCollector.getAllWarnings())
             } else {
                 const errorCollector = compareFiles(instanceConfig)
-                handleScanningErrors(errorCollector, instanceConfig.name, instanceConfig.shouldPrintResultSummaryOnly)
+                if (shouldLogOutput) {
+                    handleScanningErrors(
+                        errorCollector,
+                        instanceConfig.name,
+                        instanceConfig.shouldPrintResultSummaryOnly
+                    )
+                }
+
                 errors = errors.concat(errorCollector.getAllErrors())
                 warnings = warnings.concat(errorCollector.getAllWarnings())
             }
