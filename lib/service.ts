@@ -3,8 +3,7 @@ import fs from 'fs'
 import { FileTypes, Indentation, MultiDirectoryInstanceConfig, SingleDirectoryInstanceConfig } from './config'
 import { IScanningError, ScanningErrorsCollector, ScanningErrorTypes } from './errorCollector'
 import { handleFormattingErrors } from './errors'
-import { getFileAsObject, writeObjectToJson, writeObjectToYaml } from './fileUtils'
-import { logError } from './logger'
+import { getFileAsObject, loadAllFromDirectory, writeObjectToJson, writeObjectToYaml } from './fileUtils'
 
 const shouldFileBeExcludedBasedOnPrefix = (filePrefix: string | undefined, fileName: string): boolean => {
     if (filePrefix !== undefined && !fileName.includes(filePrefix)) {
@@ -46,40 +45,49 @@ const styleFile = ({ fileName, directoryPath, fileType, errorCollector, indentat
 
 export const styleFiles = (config: SingleDirectoryInstanceConfig) => {
     const errorCollector = new ScanningErrorsCollector()
-    const files = fs.readdirSync(config.rootDirectoryPath, { withFileTypes: true })
-    files.forEach((file) => {
-        if (!shouldFileBeExcludedBasedOnPrefix(config.filePrefix, file.name)) {
-            styleFile({
-                fileName: file.name,
-                directoryPath: config.rootDirectoryPath,
-                fileType: config.fileType,
-                errorCollector,
-                indentation: config.indentation,
-            })
-        }
-    })
+    const files = loadAllFromDirectory(config.rootDirectoryPath, errorCollector)
+    if (files !== undefined) {
+        files.forEach((file) => {
+            if (file.isFile() && !shouldFileBeExcludedBasedOnPrefix(config.filePrefix, file.name)) {
+                styleFile({
+                    fileName: file.name,
+                    directoryPath: config.rootDirectoryPath,
+                    fileType: config.fileType,
+                    errorCollector,
+                    indentation: config.indentation,
+                })
+            }
+        })
+    }
 
     handleFormattingErrors(errorCollector, config.name, config.shouldPrintResultSummaryOnly)
 }
 
 export const styleDirectories = (config: MultiDirectoryInstanceConfig) => {
     const errorCollector = new ScanningErrorsCollector()
-    const dirs = fs.readdirSync(config.rootDirectoryPath, { withFileTypes: true })
-    dirs.forEach((directory) => {
-        if (directory.isDirectory()) {
-            const currentDirectoryPath = `${config.rootDirectoryPath}/${directory.name}`
-            const files = fs.readdirSync(currentDirectoryPath, { withFileTypes: true })
-            files.forEach((file) => {
-                styleFile({
-                    fileName: file.name,
-                    directoryPath: currentDirectoryPath,
-                    fileType: config.fileType,
-                    errorCollector,
-                    indentation: config.indentation,
-                })
-            })
-        }
-    })
+    const dirs = loadAllFromDirectory(config.rootDirectoryPath, errorCollector)
+
+    if (dirs !== undefined) {
+        dirs.forEach((directory) => {
+            if (directory.isDirectory()) {
+                const currentDirectoryPath = `${config.rootDirectoryPath}/${directory.name}`
+                const files = loadAllFromDirectory(currentDirectoryPath, errorCollector)
+                if (files !== undefined) {
+                    files.forEach((file) => {
+                        if (file.isFile()) {
+                            styleFile({
+                                fileName: file.name,
+                                directoryPath: currentDirectoryPath,
+                                fileType: config.fileType,
+                                errorCollector,
+                                indentation: config.indentation,
+                            })
+                        }
+                    })
+                }
+            }
+        })
+    }
 
     handleFormattingErrors(errorCollector, config.name, config.shouldPrintResultSummaryOnly)
 }
@@ -106,48 +114,49 @@ export interface IScanResult {
 
 export const compareDirectories = (config: MultiDirectoryInstanceConfig): ScanningErrorsCollector => {
     const errorCollector = new ScanningErrorsCollector()
-    const dirs = fs.readdirSync(config.rootDirectoryPath, { withFileTypes: true })
-    const mainFiles = fs.readdirSync(`${config.rootDirectoryPath}/${config.mainDirectoryName}`, { withFileTypes: true })
+    const dirs = loadAllFromDirectory(config.rootDirectoryPath, errorCollector)
+    const mainFiles = loadAllFromDirectory(`${config.rootDirectoryPath}/${config.mainDirectoryName}`, errorCollector)
     const mainObj: any = {}
 
-    mainFiles.forEach((file) => {
-        if (file.name.includes('.json') || file.name.includes('.yml') || file.name.includes('.yaml')) {
-            mainObj[file.name] = getFileAsObject({
-                fileName: file.name,
-                directoryPath: `${config.rootDirectoryPath}/${config.mainDirectoryName}`,
-                fileType: config.fileType,
-                errorCollector,
-            })
-        }
-    })
-    dirs.forEach((directory) => {
-        if (directory.isDirectory() && directory.name !== config.mainDirectoryName) {
-            const currentDirectoryPath = `${config.rootDirectoryPath}/${directory.name}`
-            // const files = fs.readdirSync(currentDirectoryPath, { withFileTypes: true })
-            mainFiles.forEach((file) => {
-                if (file.name.includes('.json') || file.name.includes('.yml') || file.name.includes('.yaml')) {
-                    const parsedFile = getFileAsObject({
-                        fileName: file.name,
-                        directoryPath: currentDirectoryPath,
-                        fileType: config.fileType,
-                        errorCollector,
-                    })
-                    if (parsedFile) {
-                        const mainFilePath = `${config.rootDirectoryPath}/${config.mainDirectoryName}/${file.name}`
-                        const childFilePath = `${currentDirectoryPath}/${file.name}`
-                        // const fileKey = parseFileKeyFromName(file.name)
-                        compareObjects({
-                            mainObject: mainObj[file.name],
-                            childObject: parsedFile,
-                            mainFilePath,
-                            childFilePath,
+    if (dirs !== undefined && mainFiles !== undefined) {
+        mainFiles.forEach((file) => {
+            if (file.name.includes('.json') || file.name.includes('.yml') || file.name.includes('.yaml')) {
+                mainObj[file.name] = getFileAsObject({
+                    fileName: file.name,
+                    directoryPath: `${config.rootDirectoryPath}/${config.mainDirectoryName}`,
+                    fileType: config.fileType,
+                    errorCollector,
+                })
+            }
+        })
+        dirs.forEach((directory) => {
+            if (directory.isDirectory() && directory.name !== config.mainDirectoryName) {
+                const currentDirectoryPath = `${config.rootDirectoryPath}/${directory.name}`
+                mainFiles.forEach((file) => {
+                    if (file.name.includes('.json') || file.name.includes('.yml') || file.name.includes('.yaml')) {
+                        const parsedFile = getFileAsObject({
+                            fileName: file.name,
+                            directoryPath: currentDirectoryPath,
+                            fileType: config.fileType,
                             errorCollector,
                         })
+                        if (parsedFile) {
+                            const mainFilePath = `${config.rootDirectoryPath}/${config.mainDirectoryName}/${file.name}`
+                            const childFilePath = `${currentDirectoryPath}/${file.name}`
+                            // const fileKey = parseFileKeyFromName(file.name)
+                            compareObjects({
+                                mainObject: mainObj[file.name],
+                                childObject: parsedFile,
+                                mainFilePath,
+                                childFilePath,
+                                errorCollector,
+                            })
+                        }
                     }
-                }
-            })
-        }
-    })
+                })
+            }
+        })
+    }
 
     return errorCollector
 }
@@ -161,9 +170,11 @@ export const compareFiles = (config: SingleDirectoryInstanceConfig): ScanningErr
         fileType: config.fileType,
         errorCollector,
     })
-    if (mainObj !== undefined && typeof mainObj === 'object' && mainObj !== null) {
+
+    const files = loadAllFromDirectory(config.rootDirectoryPath, errorCollector)
+    if (mainObj !== undefined && files !== undefined) {
         const mainFilePath = `${config.rootDirectoryPath}/${config.mainFileName}`
-        const files = fs.readdirSync(config.rootDirectoryPath, { withFileTypes: true })
+
         files.forEach((file) => {
             if (file.name === config.mainFileName) {
                 return
@@ -178,7 +189,7 @@ export const compareFiles = (config: SingleDirectoryInstanceConfig): ScanningErr
                     errorCollector,
                 })
 
-                if (childObj !== undefined && typeof childObj === 'object' && childObj !== null) {
+                if (childObj !== undefined) {
                     if (config.shouldCheckFirstKey === true || config.shouldCheckFirstKey === undefined) {
                         compareObjects({
                             mainObject: mainObj,
@@ -203,10 +214,6 @@ export const compareFiles = (config: SingleDirectoryInstanceConfig): ScanningErr
                 }
             }
         })
-    } else {
-        logError(
-            `Could not load ${config.mainFileName}. Please make sure that the file does not contain any errors and try again.` //TODO is this necessary? Getting the file as an object should be enough.
-        )
     }
 
     return errorCollector

@@ -30,7 +30,6 @@ export const scan = (config: ParseltConfig, shouldLogOutput: boolean, instanceNa
             if (instanceConfig.isMultiDirectory) {
                 const errorCollector = compareDirectories(instanceConfig)
                 if (shouldLogOutput) {
-                    console.log('before logging')
                     handleScanningErrors(
                         errorCollector,
                         instanceConfig.name,
@@ -38,8 +37,7 @@ export const scan = (config: ParseltConfig, shouldLogOutput: boolean, instanceNa
                     )
                 }
 
-                const errorings = errorCollector.getAllErrors()
-                errors = errors.concat(errorings)
+                errors = errors.concat(errorCollector.getAllErrors())
                 warnings = warnings.concat(errorCollector.getAllWarnings())
             } else {
                 const errorCollector = compareFiles(instanceConfig)

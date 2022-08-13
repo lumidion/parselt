@@ -14,7 +14,7 @@ export enum ScanningErrorTypes {
     EMPTY_VALUE = 'empty_value',
     KEY_NOT_FOUND = 'key_not_found',
     INVALID_KEY_ORDERING = 'invalid_key_ordering',
-    COULD_NOT_LOAD_FILE = 'could_not_load_file',
+    COULD_NOT_LOAD_PATH = 'could_not_load_path',
 }
 
 interface IGreaterNumberOfKeysError extends IKeyScanningError {
@@ -35,10 +35,16 @@ interface IStandardKeyScanningError extends IKeyScanningError {
     keyName: string
 }
 
+export enum PathTypes {
+    FILE = 'file',
+    DIRECTORY = 'directory',
+}
+
 interface IFileError {
-    type: ScanningErrorTypes.COULD_NOT_LOAD_FILE
-    filePath: string
-    msg: string
+    type: ScanningErrorTypes.COULD_NOT_LOAD_PATH
+    path: string
+    pathType: PathTypes
+    msg?: string
 }
 
 export type IScanningError =
@@ -107,7 +113,7 @@ export class ScanningErrorsCollector {
             console.log('\n')
         }
         collection.forEach((error) => {
-            if (error.type !== ScanningErrorTypes.COULD_NOT_LOAD_FILE) {
+            if (error.type !== ScanningErrorTypes.COULD_NOT_LOAD_PATH) {
                 if (currentFilePath !== error.childFilePath) {
                     wrapWithSpacing(() => {
                         logger('Main File Name:')
@@ -150,8 +156,10 @@ export class ScanningErrorsCollector {
                 const keyPathStr = error.childKeyPath ? `key path, ${error.childKeyPath}` : ''
                 return `Key, ${error.keyName}, was found out of alphabetical order in ${keyPathStr} in file, ${error.childFilePath}.`
             }
-            case ScanningErrorTypes.COULD_NOT_LOAD_FILE: {
-                return `Could not load file for ${error.filePath}. Cause: ${error.msg}.`
+            case ScanningErrorTypes.COULD_NOT_LOAD_PATH: {
+                return `Could not load ${error.pathType} for ${error.path}. Cause: ${
+                    error.msg ? error.msg : 'File not found'
+                }`
             }
             case ScanningErrorTypes.SAME_VALUE_TYPES: {
                 return `Key path, ${error.childKeyPath}, in file, ${error.childFilePath}, contained the same value as ${error.mainKeyPath}, in ${error.mainFilePath}`

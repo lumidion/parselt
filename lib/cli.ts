@@ -130,7 +130,9 @@ const init = () => {
                 })
             },
             (argv: Arguments) => {
-                initializeCommandWithInstanceName(argv.instanceName)(scan)
+                initializeCommandWithInstanceName(argv.instanceName)((config, instanceName) =>
+                    scan(config, true, instanceName)
+                )
             }
         )
         .demandCommand()
