@@ -3,3 +3,4 @@ node_modules/
 *.js
 *tgz
 *.d.ts
+test/test-directories/tmp/

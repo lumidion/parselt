@@ -38,7 +38,6 @@ const styleFile = ({ fileName, directoryPath, fileType, errorCollector, indentat
             fileType,
             errorCollector,
         })
-
         writeObjectToYaml({ obj: parsedFile, indentation, path: `${directoryPath}/${fileName}` })
     }
 }

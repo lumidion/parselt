@@ -31,7 +31,7 @@ export const getFileAsObject = ({
             type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
             path: filePath,
             pathType: PathTypes.FILE,
-            msg: '`File was found with invalid content and could not be parsed for scanning. Either it has null content or the ${fileType} structure is incorrect.`',
+            msg: `File could not be parsed for scanning. Please make sure that the file exists and that the ${fileType} structure is correct.`,
         })
         return undefined
     }
@@ -48,7 +48,7 @@ export const loadAllFromDirectory = (
             type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
             path: directoryPath,
             pathType: PathTypes.DIRECTORY,
-            msg: 'Could not load files from directory.',
+            msg: 'Could not load files from directory. Please make sure that the directory exists and try again.',
         })
     }
 }
@@ -80,7 +80,7 @@ interface WriteObjectParams {
 }
 
 export const writeObjectToYaml = ({ obj, path, indentation }: WriteObjectParams) => {
-    const yaml = jsYaml.dump(obj, { indent: indentation, sortKeys: true })
+    const yaml = jsYaml.dump(obj, { indent: indentation, sortKeys: true, quotingType: '"' })
     fs.writeFileSync(path, yaml)
 }
 
