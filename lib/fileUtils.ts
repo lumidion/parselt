@@ -31,6 +31,7 @@ export const getFileAsObject = ({
             type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
             path: filePath,
             pathType: PathTypes.FILE,
+            msg: '`File was found with invalid content and could not be parsed for scanning. Either it has null content or the ${fileType} structure is incorrect.`',
         })
         return undefined
     }
@@ -47,6 +48,7 @@ export const loadAllFromDirectory = (
             type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
             path: directoryPath,
             pathType: PathTypes.DIRECTORY,
+            msg: 'Could not load files from directory.',
         })
     }
 }

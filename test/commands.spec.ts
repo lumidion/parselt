@@ -43,8 +43,8 @@ describe('Commands', () => {
         it('when scanning broken files should return appropriate errors', () => {
             const config = createConfig('broken-file-test')
             const result = scan(config, false)
-            throw new Error('test is not working - examine multi dir yaml files')
             console.log(result.errors)
+            throw new Error('test is not working - examine multi dir yaml files')
         })
     })
 })
