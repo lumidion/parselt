@@ -10,6 +10,7 @@ import {
 import { handleScanningErrors } from './errors'
 import { KeyModifierService } from './key-modifier'
 import { logTable } from './logger'
+import { deleteExcessFilesFromDirectories } from './fileUtils'
 
 const keyModifierService = new KeyModifierService()
 
@@ -33,16 +34,30 @@ export const format = (config: FormatConfig) => {
 
                 const keys = Object.keys(removedErrors)
 
-                const log = keys.map((key) => {
-                    let numberOfErrors = 0
-                    removedErrors[key].forEach((error) => (numberOfErrors += error.keyNames.length))
-                    return {
-                        'File Path': key,
-                        'Number of Keys Removed': numberOfErrors,
-                    }
-                })
+                if (keys.length > 0) {
+                    const log = keys.map((key) => {
+                        let numberOfErrors = 0
+                        removedErrors[key].forEach((error) => (numberOfErrors += error.keyNames.length))
+                        return {
+                            'File Path': key,
+                            'Number of Keys Removed': numberOfErrors,
+                        }
+                    })
+                    logTable(log)
+                }
 
-                logTable(log)
+                const removedFileNames = deleteExcessFilesFromDirectories(
+                    instanceConfig.rootDirectoryPath,
+                    instanceConfig.mainDirectoryName
+                )
+
+                if (removedFileNames.length > 0) {
+                    const removedFileLog = removedFileNames.map((fileName) => {
+                        return { 'Removed File Name': fileName }
+                    })
+
+                    logTable(removedFileLog)
+                }
             }
         } else {
             styleFiles(instanceConfig)

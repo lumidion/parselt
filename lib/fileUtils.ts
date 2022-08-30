@@ -34,17 +34,19 @@ export const getFileAsObject = ({ filePath, fileType, errorCollector }: GetFileA
 
 export const loadAllFromDirectory = (
     directoryPath: string,
-    errorCollector: ScanningErrorsCollector
+    errorCollector?: ScanningErrorsCollector
 ): Dirent[] | undefined => {
     try {
         return fs.readdirSync(directoryPath, { withFileTypes: true })
     } catch (error) {
-        errorCollector.addError({
-            type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
-            path: directoryPath,
-            pathType: PathTypes.DIRECTORY,
-            msg: 'Could not load files from directory. Please make sure that the directory exists and try again.',
-        })
+        if (errorCollector) {
+            errorCollector.addError({
+                type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
+                path: directoryPath,
+                pathType: PathTypes.DIRECTORY,
+                msg: 'Could not load files from directory. Please make sure that the directory exists and try again.',
+            })
+        }
     }
 }
 
@@ -102,4 +104,37 @@ export const getFileTypeForFile = (fileNameOrPath: string): FileTypes | undefine
     } else if (fileNameOrPath.includes('.yml') || fileNameOrPath.includes('.yaml')) {
         return FileTypes.YAML
     } else return undefined
+}
+
+export const deleteExcessFilesFromDirectories = (rootDirectoryPath: string, mainDirectoryName: string): string[] => {
+    const dirs = loadAllFromDirectory(rootDirectoryPath)
+    const mainFiles = loadAllFromDirectory(`${rootDirectoryPath}/${mainDirectoryName}`)
+    const mainFileNames: string[] = []
+    mainFiles?.forEach((mainFile) => {
+        const fileTypeOption = getFileTypeForFile(mainFile.name)
+        if (fileTypeOption) {
+            mainFileNames.push(mainFile.name)
+        }
+    })
+
+    const removedFileNames: string[] = []
+    if (dirs !== undefined) {
+        dirs.forEach((directory) => {
+            if (directory.isDirectory() && directory.name !== mainDirectoryName) {
+                const currentDirectoryPath = `${rootDirectoryPath}/${directory.name}`
+                const childFiles = loadAllFromDirectory(currentDirectoryPath)
+                if (childFiles) {
+                    childFiles.forEach((file) => {
+                        const fileTypeOption = getFileTypeForFile(file.name)
+                        if (fileTypeOption && !mainFileNames.includes(file.name)) {
+                            const filePathToDelete = `${currentDirectoryPath}/${file.name}`
+                            fs.rmSync(`${currentDirectoryPath}/${file.name}`)
+                            removedFileNames.push(filePathToDelete)
+                        }
+                    })
+                }
+            }
+        })
+    }
+    return removedFileNames
 }
