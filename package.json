@@ -1,10 +1,10 @@
 {
     "name": "parselt",
     "version": "1.0.0-RC1",
-    "bin": "./src/bin/index.js",
+    "bin": "./bin/index.js",
     "preferGlobal": true,
     "description": "This package checks and loads updates for translation files.",
-    "main": ".src/lib/index.js",
+    "main": "./lib/commands.js",
     "engines": {
         "npm": ">=7.0.0",
         "node": ">=16.0.0"

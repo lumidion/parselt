@@ -1,8 +1,4 @@
 import fs from 'fs'
-import Ajv from 'ajv'
-import { JSONSchemaType } from 'ajv'
-
-const ajv = new Ajv()
 
 export enum FileTypes {
     JSON = 'json',
@@ -97,64 +93,27 @@ export interface ParseltConfig {
     instances: InstanceConfig[]
 }
 
-const singleDirectorySchema: JSONSchemaType<SingleDirectoryInstanceConfig> = {
-    type: 'object',
-    properties: {
-        name: { type: 'string' },
-        rootDirectoryPath: { type: 'string' },
-        shouldCheckFirstKey: { type: 'boolean', nullable: true },
-        shouldPrintResultSummaryOnly: { type: 'boolean', nullable: true },
-        fileType: { type: 'string', enum: Object.values(FileTypes) },
-        indentation: { type: 'number' },
-        isMultiDirectory: { type: 'boolean' },
-        mainFileName: { type: 'string' },
-        filePrefix: { type: 'string', nullable: true },
-    },
-    required: ['name', 'rootDirectoryPath', 'fileType', 'indentation', 'isMultiDirectory', 'mainFileName'],
-    additionalProperties: false,
+export interface ScanConfig extends ParseltConfig {
+    /**
+     * Whether the command should log any output, such as summaries of errors or warnings.
+     * May be helpful to set to false in certain cases for scripting
+     * @default true
+     */
+    shouldLogOutput: boolean
 }
 
-const multiDirectorySchema: JSONSchemaType<MultiDirectoryInstanceConfig> = {
-    type: 'object',
-    properties: {
-        name: { type: 'string' },
-        rootDirectoryPath: { type: 'string' },
-        mainDirectoryName: { type: 'string' },
-        shouldCheckFirstKey: { type: 'boolean', nullable: true },
-        shouldPrintResultSummaryOnly: { type: 'boolean', nullable: true },
-        fileType: { type: 'string', enum: Object.values(FileTypes) },
-        indentation: { type: 'number' },
-        isMultiDirectory: { type: 'boolean' },
-    },
-    required: ['name', 'rootDirectoryPath', 'fileType', 'indentation', 'isMultiDirectory', 'mainDirectoryName'],
-    additionalProperties: false,
-}
-const singleDirectoryValidator = ajv.compile(singleDirectorySchema)
-const multiDirectoryValidator = ajv.compile(multiDirectorySchema)
+export interface FormatConfig extends ParseltConfig {
+    /**
+     * Should the format command remove any extra keys found in the child files
+     * For instance if the main file is {"key1": 1} and the child file is {"key1": 1, "key2": 2}, key2 will be removed from the child file
+     * @default false
+     */
+    shouldRemoveExtras: boolean
 
-export const loadConfig = (): ParseltConfig => {
-    try {
-        const configFile = fs.readFileSync(`${process.cwd()}/parselt.json`, 'utf8')
-        const json = JSON.parse(configFile)
-        if (json?.instances && Array.isArray(json?.instances)) {
-            json.instances.forEach((instance: any) => {
-                if (instance?.isMultiDirectory !== undefined) {
-                    if (!singleDirectoryValidator(instance) && !multiDirectoryValidator(instance)) {
-                        throw new Error(
-                            `Could not load config. Could not parse instance as single or multi directory. Single directory errors ${singleDirectoryValidator.errors?.toString}. Multi-directory errors ${singleDirectoryValidator.errors?.toString}`
-                        )
-                    }
-                } else {
-                    throw new Error(`Could not load config. Instance did not contain key: isMultiDirectory.`)
-                }
-            })
-            return json as ParseltConfig //typecasting isn't great here. Find a different way to do it.
-        } else {
-            throw new Error(`Could not load config. 'Instances' key had a malformed structure.`)
-        }
-    } catch (error) {
-        throw new Error(
-            'Could not load config file in root directory. Please create config file (parselt.json) and try again'
-        )
-    }
+    /**
+     * Whether the command should log any output, such as summaries of errors or warnings.
+     * May be helpful to set to false in certain cases for scripting
+     * @default true
+     */
+    shouldLogOutput: boolean
 }

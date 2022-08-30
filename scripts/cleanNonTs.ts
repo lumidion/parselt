@@ -9,5 +9,6 @@ const removeNonTsFilesInDir = (dirPath: string) => {
         }
     })
 }
+
 removeNonTsFilesInDir('./bin')
 removeNonTsFilesInDir('./lib')

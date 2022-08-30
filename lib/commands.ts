@@ -1,58 +1,86 @@
 import { styleDirectories, styleFiles, compareDirectories, compareFiles, IScanResult } from './service'
-import { InstanceConfig, MultiDirectoryInstanceConfig, ParseltConfig } from './config'
+import { FormatConfig, MultiDirectoryInstanceConfig, ScanConfig } from './config/config'
 import { loadNewFileTemplate } from './loader'
-import { IScanningError, ScanningErrorsCollector } from './errorCollector'
+import {
+    IGreaterNumberOfKeysError,
+    IScanningError,
+    ScanningErrorsCollector,
+    ScanningErrorTypes,
+} from './errorCollector'
 import { handleScanningErrors } from './errors'
+import { KeyModifierService } from './key-modifier'
+import { logTable } from './logger'
 
-export const format = (config: ParseltConfig, instanceName?: string) => {
+const keyModifierService = new KeyModifierService()
+
+export const format = (config: FormatConfig) => {
     config.instances.forEach((instanceConfig) => {
-        gateByInstanceName(
-            instanceConfig,
-            instanceName
-        )(() => {
-            if (instanceConfig.isMultiDirectory === true) {
-                styleDirectories(instanceConfig)
-            } else {
-                styleFiles(instanceConfig)
+        if (instanceConfig.isMultiDirectory === true) {
+            styleDirectories(instanceConfig)
+
+            const errorCollector = compareDirectories(instanceConfig)
+            if (config.shouldRemoveExtras) {
+                const errors = errorCollector.getAllErrors()
+                const greaterNumberErrors = errors.filter(
+                    (error): error is IGreaterNumberOfKeysError =>
+                        error.type === ScanningErrorTypes.GREATER_NUMBER_OF_CHILD_KEYS
+                )
+
+                const removedErrors = keyModifierService.removeGreaterNumberErrors(
+                    greaterNumberErrors,
+                    instanceConfig.indentation
+                )
+
+                const keys = Object.keys(removedErrors)
+
+                const log = keys.map((key) => {
+                    let numberOfErrors = 0
+                    removedErrors[key].forEach((error) => (numberOfErrors += error.keyNames.length))
+                    return {
+                        'File Path': key,
+                        'Number of Keys Removed': numberOfErrors,
+                    }
+                })
+
+                logTable(log)
             }
-        })
+        } else {
+            styleFiles(instanceConfig)
+            const errorCollector = compareFiles(instanceConfig)
+            if (config.shouldRemoveExtras) {
+                const errors = errorCollector.getAllErrors()
+                const greaterNumberErrors = errors.filter(
+                    (error): error is IGreaterNumberOfKeysError =>
+                        error.type === ScanningErrorTypes.GREATER_NUMBER_OF_CHILD_KEYS
+                )
+
+                keyModifierService.removeGreaterNumberErrors(greaterNumberErrors, instanceConfig.indentation)
+            }
+        }
     })
 }
 
-export const scan = (config: ParseltConfig, shouldLogOutput: boolean, instanceName?: string): IScanResult => {
+export const scan = (config: ScanConfig): IScanResult => {
     let errors: IScanningError[] = []
     let warnings: IScanningError[] = []
     config.instances.forEach((instanceConfig) => {
-        gateByInstanceName(
-            instanceConfig,
-            instanceName
-        )(() => {
-            if (instanceConfig.isMultiDirectory) {
-                const errorCollector = compareDirectories(instanceConfig)
-                if (shouldLogOutput) {
-                    handleScanningErrors(
-                        errorCollector,
-                        instanceConfig.name,
-                        instanceConfig.shouldPrintResultSummaryOnly
-                    )
-                }
-
-                errors = errors.concat(errorCollector.getAllErrors())
-                warnings = warnings.concat(errorCollector.getAllWarnings())
-            } else {
-                const errorCollector = compareFiles(instanceConfig)
-                if (shouldLogOutput) {
-                    handleScanningErrors(
-                        errorCollector,
-                        instanceConfig.name,
-                        instanceConfig.shouldPrintResultSummaryOnly
-                    )
-                }
-
-                errors = errors.concat(errorCollector.getAllErrors())
-                warnings = warnings.concat(errorCollector.getAllWarnings())
+        if (instanceConfig.isMultiDirectory) {
+            const errorCollector = compareDirectories(instanceConfig)
+            if (config.shouldLogOutput) {
+                handleScanningErrors(errorCollector, instanceConfig.name, instanceConfig.shouldPrintResultSummaryOnly)
             }
-        })
+
+            errors = errors.concat(errorCollector.getAllErrors())
+            warnings = warnings.concat(errorCollector.getAllWarnings())
+        } else {
+            const errorCollector = compareFiles(instanceConfig)
+            if (config.shouldLogOutput) {
+                handleScanningErrors(errorCollector, instanceConfig.name, instanceConfig.shouldPrintResultSummaryOnly)
+            }
+
+            errors = errors.concat(errorCollector.getAllErrors())
+            warnings = warnings.concat(errorCollector.getAllWarnings())
+        }
     })
 
     return {
@@ -64,14 +92,4 @@ export const scan = (config: ParseltConfig, shouldLogOutput: boolean, instanceNa
 export const addFileFromTemplate = (config: MultiDirectoryInstanceConfig, fileName: string, directories?: string[]) => {
     const errorCollector = new ScanningErrorsCollector()
     loadNewFileTemplate({ config, templateFileName: fileName, directories, errorCollector })
-}
-
-const gateByInstanceName = (config: InstanceConfig, instanceName?: string) => (func: () => void) => {
-    if (instanceName && config.name) {
-        if (config.name === instanceName) {
-            func()
-        }
-    } else {
-        func()
-    }
 }

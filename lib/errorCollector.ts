@@ -17,7 +17,7 @@ export enum ScanningErrorTypes {
     COULD_NOT_LOAD_PATH = 'could_not_load_path',
 }
 
-interface IGreaterNumberOfKeysError extends IKeyScanningError {
+export interface IGreaterNumberOfKeysError extends IKeyScanningError {
     type: ScanningErrorTypes.GREATER_NUMBER_OF_CHILD_KEYS
     keyNames: string[]
 }

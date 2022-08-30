@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import { FileTypes, Indentation, MultiDirectoryInstanceConfig, SingleDirectoryInstanceConfig } from './config'
+import { FileTypes, Indentation, MultiDirectoryInstanceConfig, SingleDirectoryInstanceConfig } from './config/config'
 import { IScanningError, ScanningErrorsCollector, ScanningErrorTypes } from './errorCollector'
 import { handleFormattingErrors } from './errors'
 import { getFileAsObject, loadAllFromDirectory, writeObjectToJson, writeObjectToYaml } from './fileUtils'
@@ -24,8 +24,7 @@ interface StyleFileParams {
 const styleFile = ({ fileName, directoryPath, fileType, errorCollector, indentation }: StyleFileParams) => {
     if (fileName.includes('.json') && fileType === FileTypes.JSON) {
         const parsedFile = getFileAsObject({
-            fileName,
-            directoryPath,
+            filePath: `${directoryPath}/${fileName}`,
             fileType,
             errorCollector,
         })
@@ -33,8 +32,7 @@ const styleFile = ({ fileName, directoryPath, fileType, errorCollector, indentat
         writeObjectToJson({ obj: sortedObj, indentation, path: `${directoryPath}/${fileName}` })
     } else if (fileName.includes('.yml') || (fileName.includes('.yaml') && fileType === FileTypes.YAML)) {
         const parsedFile = getFileAsObject({
-            fileName,
-            directoryPath,
+            filePath: `${directoryPath}/${fileName}`,
             fileType,
             errorCollector,
         })
@@ -121,8 +119,7 @@ export const compareDirectories = (config: MultiDirectoryInstanceConfig): Scanni
         mainFiles.forEach((file) => {
             if (file.name.includes('.json') || file.name.includes('.yml') || file.name.includes('.yaml')) {
                 mainObj[file.name] = getFileAsObject({
-                    fileName: file.name,
-                    directoryPath: `${config.rootDirectoryPath}/${config.mainDirectoryName}`,
+                    filePath: `${config.rootDirectoryPath}/${config.mainDirectoryName}/${file.name}`,
                     fileType: config.fileType,
                     errorCollector,
                 })
@@ -134,8 +131,7 @@ export const compareDirectories = (config: MultiDirectoryInstanceConfig): Scanni
                 mainFiles.forEach((file) => {
                     if (file.name.includes('.json') || file.name.includes('.yml') || file.name.includes('.yaml')) {
                         const parsedFile = getFileAsObject({
-                            fileName: file.name,
-                            directoryPath: currentDirectoryPath,
+                            filePath: `${currentDirectoryPath}/${file.name}`,
                             fileType: config.fileType,
                             errorCollector,
                         })
@@ -164,8 +160,7 @@ export const compareFiles = (config: SingleDirectoryInstanceConfig): ScanningErr
     const errorCollector = new ScanningErrorsCollector()
 
     const mainObj = getFileAsObject({
-        fileName: config.mainFileName,
-        directoryPath: config.rootDirectoryPath,
+        filePath: `${config.rootDirectoryPath}/${config.mainFileName}`,
         fileType: config.fileType,
         errorCollector,
     })
@@ -182,8 +177,7 @@ export const compareFiles = (config: SingleDirectoryInstanceConfig): ScanningErr
             } else {
                 const childFilePath = `${config.rootDirectoryPath}/${file.name}`
                 const childObj = getFileAsObject({
-                    fileName: file.name,
-                    directoryPath: config.rootDirectoryPath,
+                    filePath: `${config.rootDirectoryPath}/${file.name}`,
                     fileType: config.fileType,
                     errorCollector,
                 })

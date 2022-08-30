@@ -1,4 +1,4 @@
-import { MultiDirectoryInstanceConfig } from './config'
+import { MultiDirectoryInstanceConfig } from './config/config'
 import { ScanningErrorsCollector } from './errorCollector'
 import fs from 'fs'
 import * as lodash from 'lodash'
@@ -22,6 +22,26 @@ const addValueToObjectFromKey = (keyString: string, value: string, obj: any) => 
     return newObject
 }
 
+export const deleteKeyFromObject = (keyString: string, obj: any) => {
+    const keys = keyString.split('.')
+    const newObject = lodash.cloneDeep(obj)
+    let ref = newObject
+
+    keys.every((key, index) => {
+        if (index === keys.length - 1) {
+            delete ref[key]
+            return true
+        } else if (keys.includes(key)) {
+            ref = ref[key]
+            return true
+        } else {
+            return false
+        }
+    })
+
+    return newObject
+}
+
 interface DirectoryTranslationAddition {
     value: string
     directoryName: string
@@ -33,7 +53,7 @@ interface DirectoryTranslationAddition {
 //     config: MultiDirectoryInstanceConfig,
 //     additions: DirectoryTranslationAddition[]
 // ) => {
-    
+
 //     const errorCollector = new ScanningErrorsCollector()
 //     const dirs = fs.readdirSync(config.rootDirectoryPath, { withFileTypes: true })
 //     dirs.forEach((directory) => {

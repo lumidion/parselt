@@ -1,4 +1,4 @@
-import { MultiDirectoryInstanceConfig } from './config'
+import { MultiDirectoryInstanceConfig } from './config/config'
 import { ScanningErrorsCollector } from './errorCollector'
 import { getFileAsObject, writeObjectToFile } from './fileUtils'
 import fs from 'fs'
@@ -17,8 +17,7 @@ export const loadNewFileTemplate = ({
     errorCollector,
 }: LoadNewFileTemplateParams) => {
     const mainObj = getFileAsObject({
-        fileName: templateFileName,
-        directoryPath: `${config.rootDirectoryPath}/${config.mainDirectoryName}`,
+        filePath: `${config.rootDirectoryPath}/${config.mainDirectoryName}/${templateFileName}`,
         fileType: config.fileType,
         errorCollector,
     })

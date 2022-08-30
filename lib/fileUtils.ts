@@ -1,38 +1,33 @@
 import fs, { Dirent } from 'fs'
 import jsYaml from 'js-yaml'
-import { FileTypes, Indentation } from './config'
+import { FileTypes, Indentation } from './config/config'
 import { PathTypes, ScanningErrorsCollector, ScanningErrorTypes } from './errorCollector'
 
 interface GetFileAsObjectParams {
-    fileName: string
-    directoryPath: string
+    filePath: string
     fileType: FileTypes
-    errorCollector: ScanningErrorsCollector
+    errorCollector?: ScanningErrorsCollector
 }
 
-export const getFileAsObject = ({
-    fileName,
-    directoryPath,
-    fileType,
-    errorCollector,
-}: GetFileAsObjectParams): object | undefined => {
-    const filePath = `${directoryPath}/${fileName}`
+export const getFileAsObject = ({ filePath, fileType, errorCollector }: GetFileAsObjectParams): object | undefined => {
     try {
         const file = fs.readFileSync(filePath, 'utf8')
-        if (fileType === FileTypes.YAML && (fileName.includes('.yml') || fileName.includes('.yaml'))) {
+        if (fileType === FileTypes.YAML && (filePath.includes('.yml') || filePath.includes('.yaml'))) {
             const loadedObject = jsYaml.load(file)
             return parseFileIntoObject({ obj: loadedObject, filePath, fileType, errorCollector })
-        } else if (fileType === FileTypes.JSON && fileName.includes('.json')) {
+        } else if (fileType === FileTypes.JSON && filePath.includes('.json')) {
             const loadedObject = JSON.parse(file)
             return parseFileIntoObject({ obj: loadedObject, filePath, fileType, errorCollector })
         }
     } catch (error) {
-        errorCollector.addError({
-            type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
-            path: filePath,
-            pathType: PathTypes.FILE,
-            msg: `File could not be parsed for scanning. Please make sure that the file exists and that the ${fileType} structure is correct.`,
-        })
+        if (errorCollector) {
+            errorCollector.addError({
+                type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
+                path: filePath,
+                pathType: PathTypes.FILE,
+                msg: `File could not be parsed for scanning. Please make sure that the file exists and that the ${fileType} structure is correct.`,
+            })
+        }
         return undefined
     }
 }
@@ -55,7 +50,7 @@ export const loadAllFromDirectory = (
 
 interface ObjectParsingParams {
     obj: unknown
-    errorCollector: ScanningErrorsCollector
+    errorCollector?: ScanningErrorsCollector
     filePath: string
     fileType: FileTypes
 }
@@ -63,7 +58,7 @@ interface ObjectParsingParams {
 const parseFileIntoObject = ({ obj, errorCollector, filePath, fileType }: ObjectParsingParams): object | undefined => {
     if (typeof obj === 'object' && obj !== null) {
         return obj
-    } else {
+    } else if (errorCollector) {
         errorCollector.addError({
             type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
             path: filePath,
@@ -99,4 +94,12 @@ export const writeObjectToFile = ({ obj, path, indentation, fileType }: WriteObj
     } else if (fileType === FileTypes.YAML) {
         writeObjectToYaml({ obj, path, indentation })
     }
+}
+
+export const getFileTypeForFile = (fileNameOrPath: string): FileTypes | undefined => {
+    if (fileNameOrPath.includes('.json')) {
+        return FileTypes.JSON
+    } else if (fileNameOrPath.includes('.yml') || fileNameOrPath.includes('.yaml')) {
+        return FileTypes.YAML
+    } else return undefined
 }
