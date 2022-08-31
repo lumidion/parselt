@@ -1,10 +1,13 @@
 import { Indentation, MultiDirectoryInstanceConfig, SingleDirectoryInstanceConfig } from '../config/config'
 import { ScanningErrorsCollector } from '../errorCollector'
 import { handleFormattingErrors } from '../errors'
-import { getFileAsObject, loadAllFromDirectory, writeObjectToFile } from './FileService'
-import { shouldFileBeScanned } from './logic'
+import { FileService } from './FileService'
 
 export class FormattingService {
+    private readonly fileService: FileService
+    constructor(fileService: FileService) {
+        this.fileService = fileService
+    }
     private sortObjectKeysAlphabetically(obj: any): any {
         const newObj: any = {}
         const keys = Object.keys(obj).sort()
@@ -20,22 +23,19 @@ export class FormattingService {
         return newObj
     }
 
-    private styleFile = (filePath: string, indentation: Indentation, errorCollector: ScanningErrorsCollector) => {
-        const parsedFile = getFileAsObject({
-            filePath,
-            errorCollector,
-        })
+    private styleFile = (filePath: string, indentation: Indentation) => {
+        const parsedFile = this.fileService.getFileAsObject(filePath, true)
         const sortedObj = this.sortObjectKeysAlphabetically(parsedFile)
-        writeObjectToFile({ obj: sortedObj, indentation, path: filePath })
+        this.fileService.writeObjectToFile(sortedObj, filePath, indentation)
     }
 
     styleFiles(config: SingleDirectoryInstanceConfig) {
         const errorCollector = new ScanningErrorsCollector()
-        const files = loadAllFromDirectory(config.rootDirectoryPath, errorCollector)
+        const files = this.fileService.loadAllFromDirectory(config.rootDirectoryPath, true)
         if (files !== undefined) {
             files.forEach((file) => {
-                if (shouldFileBeScanned(file, config.fileType, config.filePrefix)) {
-                    this.styleFile(`${config.rootDirectoryPath}/${file.name}`, config.indentation, errorCollector)
+                if (FileService.shouldFileBeScanned(file, config.fileType, config.filePrefix)) {
+                    this.styleFile(`${config.rootDirectoryPath}/${file.name}`, config.indentation)
                 }
             })
         }
@@ -44,21 +44,17 @@ export class FormattingService {
 
     styleDirectories(config: MultiDirectoryInstanceConfig) {
         const errorCollector = new ScanningErrorsCollector()
-        const dirs = loadAllFromDirectory(config.rootDirectoryPath, errorCollector)
+        const dirs = this.fileService.loadAllFromDirectory(config.rootDirectoryPath, true)
 
         if (dirs !== undefined) {
             dirs.forEach((directory) => {
                 if (directory.isDirectory()) {
                     const currentDirectoryPath = `${config.rootDirectoryPath}/${directory.name}`
-                    const files = loadAllFromDirectory(currentDirectoryPath, errorCollector)
+                    const files = this.fileService.loadAllFromDirectory(currentDirectoryPath, true)
                     if (files !== undefined) {
                         files.forEach((file) => {
-                            if (shouldFileBeScanned(file, config.fileType)) {
-                                this.styleFile(
-                                    `${currentDirectoryPath}/${file.name}`,
-                                    config.indentation,
-                                    errorCollector
-                                )
+                            if (FileService.shouldFileBeScanned(file, config.fileType)) {
+                                this.styleFile(`${currentDirectoryPath}/${file.name}`, config.indentation)
                             }
                         })
                     }

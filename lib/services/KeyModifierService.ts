@@ -1,11 +1,15 @@
 import { Indentation } from '../config/config'
 import { IGreaterNumberOfKeysError } from '../errorCollector'
-import { getFileAsObject, getFileTypeForFile, writeObjectToFile } from './FileService'
 import * as lodash from 'lodash'
+import { FileService } from './FileService'
 
 type SortedErrors = Record<string, IGreaterNumberOfKeysError[]>
 
 export class KeyModifierService {
+    private readonly fileService: FileService
+    constructor(fileService: FileService) {
+        this.fileService = fileService
+    }
     addValueToObjectFromKey(keyString: string, value: string, obj: any) {
         const keys = keyString.split('.')
         const newObject = lodash.cloneDeep(obj)
@@ -83,9 +87,9 @@ export class KeyModifierService {
         filePath: string,
         indentation: Indentation
     ) {
-        const fileTypeOption = getFileTypeForFile(filePath)
+        const fileTypeOption = FileService.getFileTypeForFile(filePath)
         if (fileTypeOption) {
-            const file = getFileAsObject({ filePath })
+            const file = this.fileService.getFileAsObject(filePath, false)
             let newObject: any = lodash.cloneDeep(file)
             if (file) {
                 errors.forEach((error) => {
@@ -98,7 +102,7 @@ export class KeyModifierService {
             } else {
                 throw new Error(`Couldn't load file for path: ${filePath}`)
             }
-            writeObjectToFile({ obj: newObject, path: filePath, indentation })
+            this.fileService.writeObjectToFile(newObject, filePath, indentation)
         } else {
             throw new Error(`File type unsupported for path: ${filePath}`)
         }

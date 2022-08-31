@@ -1,6 +1,6 @@
 import { IScanResult, ScanningService } from './services/ScanningService'
 import { AddTranslationFileConfig, FormatConfig, ScanConfig } from './config/config'
-import { createFileFromTemplate } from './services/FileService'
+import { FileService } from './services/FileService'
 import {
     IGreaterNumberOfKeysError,
     IScanningError,
@@ -10,15 +10,15 @@ import {
 import { handleScanningErrors } from './errors'
 import { KeyModifierService } from './services/KeyModifierService'
 import { logTable } from './logger'
-import { deleteExcessFilesFromDirectories } from './services/FileService'
 import { FormattingService } from './services/FormattingService'
-
-const keyModifierService = new KeyModifierService()
 
 export const format = (config: FormatConfig) => {
     const errorCollector = new ScanningErrorsCollector()
-    const formattingService = new FormattingService()
-    const scanningService = new ScanningService(errorCollector)
+    const fileService = new FileService(errorCollector)
+    const formattingService = new FormattingService(fileService)
+    const scanningService = new ScanningService(errorCollector, fileService)
+    const keyModifierService = new KeyModifierService(fileService)
+
     config.instances.forEach((instanceConfig) => {
         if (instanceConfig.isMultiDirectory === true) {
             formattingService.styleDirectories(instanceConfig)
@@ -50,7 +50,7 @@ export const format = (config: FormatConfig) => {
                     logTable(log)
                 }
 
-                const removedFileNames = deleteExcessFilesFromDirectories(
+                const removedFileNames = fileService.deleteExcessFilesFromDirectories(
                     instanceConfig.rootDirectoryPath,
                     instanceConfig.mainDirectoryName
                 )
@@ -82,7 +82,9 @@ export const format = (config: FormatConfig) => {
 
 export const scan = (config: ScanConfig): IScanResult => {
     const errorCollector = new ScanningErrorsCollector()
-    const scanningService = new ScanningService(errorCollector)
+    const fileService = new FileService(errorCollector)
+    const scanningService = new ScanningService(errorCollector, fileService)
+
     let errors: IScanningError[] = []
     let warnings: IScanningError[] = []
     config.instances.forEach((instanceConfig) => {
@@ -113,10 +115,6 @@ export const scan = (config: ScanConfig): IScanResult => {
 
 export const addTranslationFile = (config: AddTranslationFileConfig) => {
     const errorCollector = new ScanningErrorsCollector()
-    createFileFromTemplate({
-        config: config.instance,
-        templateFileName: config.fileName,
-        directories: config.directories,
-        errorCollector,
-    })
+    const fileService = new FileService(errorCollector)
+    fileService.createFileFromTemplate(config)
 }

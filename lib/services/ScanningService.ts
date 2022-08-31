@@ -1,7 +1,6 @@
 import { MultiDirectoryInstanceConfig, SingleDirectoryInstanceConfig } from '../config/config'
 import { IScanningError, ScanningErrorsCollector, ScanningErrorTypes } from '../errorCollector'
-import { getFileAsObject, loadAllFromDirectory } from './FileService'
-import { shouldFileBeScanned } from './logic'
+import { FileService } from './FileService'
 
 export interface IScanResult {
     errors: IScanningError[]
@@ -29,23 +28,25 @@ interface CompareObjectsParams {
 
 export class ScanningService {
     private readonly errorCollector: ScanningErrorsCollector
-    constructor(errorCollector: ScanningErrorsCollector) {
+    private readonly fileService: FileService
+    constructor(errorCollector: ScanningErrorsCollector, fileService: FileService) {
+        this.fileService = fileService
         this.errorCollector = errorCollector
     }
     compareDirectories(config: MultiDirectoryInstanceConfig): void {
-        const dirs = loadAllFromDirectory(config.rootDirectoryPath, this.errorCollector)
-        const mainFiles = loadAllFromDirectory(
+        const dirs = this.fileService.loadAllFromDirectory(config.rootDirectoryPath, true)
+        const mainFiles = this.fileService.loadAllFromDirectory(
             `${config.rootDirectoryPath}/${config.mainDirectoryName}`,
-            this.errorCollector
+            true
         )
         const mainObj: any = {}
 
         if (dirs !== undefined && mainFiles !== undefined) {
             mainFiles.forEach((file) => {
-                const childObj = getFileAsObject({
-                    filePath: `${config.rootDirectoryPath}/${config.mainDirectoryName}/${file.name}`,
-                    errorCollector: this.errorCollector,
-                })
+                const childObj = this.fileService.getFileAsObject(
+                    `${config.rootDirectoryPath}/${config.mainDirectoryName}/${file.name}`,
+                    true
+                )
                 if (childObj !== undefined) {
                     mainObj[file.name] = childObj
                 }
@@ -54,11 +55,11 @@ export class ScanningService {
                 if (directory.isDirectory() && directory.name !== config.mainDirectoryName) {
                     const currentDirectoryPath = `${config.rootDirectoryPath}/${directory.name}`
                     mainFiles.forEach((file) => {
-                        if (shouldFileBeScanned(file, config.fileType)) {
-                            const parsedFile = getFileAsObject({
-                                filePath: `${currentDirectoryPath}/${file.name}`,
-                                errorCollector: this.errorCollector,
-                            })
+                        if (FileService.shouldFileBeScanned(file, config.fileType)) {
+                            const parsedFile = this.fileService.getFileAsObject(
+                                `${currentDirectoryPath}/${file.name}`,
+                                true
+                            )
                             if (parsedFile) {
                                 const mainFilePath = `${config.rootDirectoryPath}/${config.mainDirectoryName}/${file.name}`
                                 const childFilePath = `${currentDirectoryPath}/${file.name}`
@@ -79,26 +80,20 @@ export class ScanningService {
     compareFiles = (config: SingleDirectoryInstanceConfig): ScanningErrorsCollector => {
         const errorCollector = new ScanningErrorsCollector()
 
-        const mainObj = getFileAsObject({
-            filePath: `${config.rootDirectoryPath}/${config.mainFileName}`,
-            errorCollector,
-        })
+        const mainObj = this.fileService.getFileAsObject(`${config.rootDirectoryPath}/${config.mainFileName}`, true)
 
-        const files = loadAllFromDirectory(config.rootDirectoryPath, errorCollector)
+        const files = this.fileService.loadAllFromDirectory(config.rootDirectoryPath, true)
         if (mainObj !== undefined && files !== undefined) {
             const mainFilePath = `${config.rootDirectoryPath}/${config.mainFileName}`
 
             files.forEach((file) => {
                 if (file.name === config.mainFileName) {
                     return
-                } else if (!shouldFileBeScanned(file, config.fileType, config.filePrefix)) {
+                } else if (!FileService.shouldFileBeScanned(file, config.fileType, config.filePrefix)) {
                     return
                 } else {
                     const childFilePath = `${config.rootDirectoryPath}/${file.name}`
-                    const childObj = getFileAsObject({
-                        filePath: `${config.rootDirectoryPath}/${file.name}`,
-                        errorCollector,
-                    })
+                    const childObj = this.fileService.getFileAsObject(`${config.rootDirectoryPath}/${file.name}`, true)
 
                     if (childObj !== undefined) {
                         if (config.shouldCheckFirstKey === true || config.shouldCheckFirstKey === undefined) {
