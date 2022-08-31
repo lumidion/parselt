@@ -1,5 +1,3 @@
-import fs from 'fs'
-
 export enum FileTypes {
     JSON = 'json',
     YAML = 'yaml',

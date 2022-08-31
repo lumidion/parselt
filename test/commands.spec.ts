@@ -1,13 +1,13 @@
 import { createConfig } from './test-utils/config'
 import { scan } from '../lib/commands'
 import { testFormatting } from './test-utils/testFormatting'
-import { FileTypes } from '../lib/config'
+import { FileTypes } from '../lib/config/config'
 
 describe('Commands', () => {
     describe.skip('Scan Command', () => {
         it('when scanning empty directories should return appropriate errors', () => {
             const config = createConfig('empty-dir-test')
-            const result = scan(config, false)
+            const result = scan(config)
 
             expect(result.errors).toStrictEqual([
                 {
@@ -50,7 +50,7 @@ describe('Commands', () => {
         })
         it('when scanning broken files should return appropriate errors', () => {
             const config = createConfig('broken-file-test')
-            const result = scan(config, false)
+            const result = scan(config)
             expect(result.errors).toStrictEqual([
                 {
                     type: 'could_not_load_path',
