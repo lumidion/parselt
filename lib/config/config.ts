@@ -117,3 +117,9 @@ export interface FormatConfig extends ParseltConfig {
      */
     shouldLogOutput: boolean
 }
+
+export interface AddTranslationFileConfig {
+    instance: MultiDirectoryInstanceConfig
+    fileName: string
+    directories?: string[]
+}

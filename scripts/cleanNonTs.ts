@@ -6,6 +6,8 @@ const removeNonTsFilesInDir = (dirPath: string) => {
         const shouldFileBeRemoved = file.name.includes('.js') || file.name.includes('.d.ts')
         if (file.isFile() && shouldFileBeRemoved) {
             fs.rmSync(`${dirPath}/${file.name}`)
+        } else if (file.isDirectory()) {
+            removeNonTsFilesInDir(`${dirPath}/${file.name}`)
         }
     })
 }

@@ -1,33 +1,38 @@
 import fs, { Dirent } from 'fs'
 import jsYaml from 'js-yaml'
-import { FileTypes, Indentation } from './config/config'
-import { PathTypes, ScanningErrorsCollector, ScanningErrorTypes } from './errorCollector'
+import { FileTypes, Indentation, MultiDirectoryInstanceConfig } from '../config/config'
+import { PathTypes, ScanningErrorsCollector, ScanningErrorTypes } from '../errorCollector'
 
 interface GetFileAsObjectParams {
     filePath: string
-    fileType: FileTypes
     errorCollector?: ScanningErrorsCollector
 }
 
-export const getFileAsObject = ({ filePath, fileType, errorCollector }: GetFileAsObjectParams): object | undefined => {
-    try {
-        const file = fs.readFileSync(filePath, 'utf8')
-        if (fileType === FileTypes.YAML && (filePath.includes('.yml') || filePath.includes('.yaml'))) {
-            const loadedObject = jsYaml.load(file)
-            return parseFileIntoObject({ obj: loadedObject, filePath, fileType, errorCollector })
-        } else if (fileType === FileTypes.JSON && filePath.includes('.json')) {
-            const loadedObject = JSON.parse(file)
-            return parseFileIntoObject({ obj: loadedObject, filePath, fileType, errorCollector })
+export const getFileAsObject = ({ filePath, errorCollector }: GetFileAsObjectParams): object | undefined => {
+    const fileType = getFileTypeForFile(filePath)
+    if (fileType !== undefined) {
+        try {
+            const file = fs.readFileSync(filePath, 'utf8')
+
+            if (fileType === FileTypes.YAML) {
+                const loadedObject = jsYaml.load(file)
+                return parseFileIntoObject({ obj: loadedObject, filePath, fileType, errorCollector })
+            } else if (fileType === FileTypes.JSON) {
+                const loadedObject = JSON.parse(file)
+                return parseFileIntoObject({ obj: loadedObject, filePath, fileType, errorCollector })
+            }
+        } catch (error) {
+            if (errorCollector) {
+                errorCollector.addError({
+                    type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
+                    path: filePath,
+                    pathType: PathTypes.FILE,
+                    msg: `File could not be parsed for scanning. Please make sure that the file exists and that the ${fileType} structure is correct.`,
+                })
+            }
+            return undefined
         }
-    } catch (error) {
-        if (errorCollector) {
-            errorCollector.addError({
-                type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
-                path: filePath,
-                pathType: PathTypes.FILE,
-                msg: `File could not be parsed for scanning. Please make sure that the file exists and that the ${fileType} structure is correct.`,
-            })
-        }
+    } else {
         return undefined
     }
 }
@@ -76,21 +81,18 @@ interface WriteObjectParams {
     path: string
 }
 
-export const writeObjectToYaml = ({ obj, path, indentation }: WriteObjectParams) => {
+const writeObjectToYaml = ({ obj, path, indentation }: WriteObjectParams) => {
     const yaml = jsYaml.dump(obj, { indent: indentation, sortKeys: true, quotingType: '"' })
     fs.writeFileSync(path, yaml)
 }
 
-export const writeObjectToJson = ({ obj, path, indentation }: WriteObjectParams) => {
+const writeObjectToJson = ({ obj, path, indentation }: WriteObjectParams) => {
     const json = JSON.stringify(obj, undefined, indentation)
     fs.writeFileSync(path, json)
 }
 
-interface WriteObjectToFileParams extends WriteObjectParams {
-    fileType: FileTypes
-}
-
-export const writeObjectToFile = ({ obj, path, indentation, fileType }: WriteObjectToFileParams) => {
+export const writeObjectToFile = ({ obj, path, indentation }: WriteObjectParams) => {
+    const fileType = getFileTypeForFile(path)
     if (fileType === FileTypes.JSON) {
         writeObjectToJson({ obj, path, indentation })
     } else if (fileType === FileTypes.YAML) {
@@ -137,4 +139,44 @@ export const deleteExcessFilesFromDirectories = (rootDirectoryPath: string, main
         })
     }
     return removedFileNames
+}
+
+interface CreateFileFromTemplateParams {
+    config: MultiDirectoryInstanceConfig
+    templateFileName: string
+    directories?: string[]
+    errorCollector: ScanningErrorsCollector
+}
+
+export const createFileFromTemplate = ({
+    config,
+    templateFileName,
+    directories,
+    errorCollector,
+}: CreateFileFromTemplateParams) => {
+    const mainObj = getFileAsObject({
+        filePath: `${config.rootDirectoryPath}/${config.mainDirectoryName}/${templateFileName}`,
+        errorCollector,
+    })
+
+    if (directories && directories.length > 0) {
+        directories.forEach((directory) => {
+            writeObjectToFile({
+                obj: mainObj,
+                path: `${config.rootDirectoryPath}/${directory}/${templateFileName}`,
+                indentation: config.indentation,
+            })
+        })
+    } else {
+        const dirs = fs.readdirSync(config.rootDirectoryPath, { withFileTypes: true })
+        dirs.forEach((directory) => {
+            if (directory.isDirectory()) {
+                writeObjectToFile({
+                    obj: mainObj,
+                    path: `${config.rootDirectoryPath}/${directory.name}/${templateFileName}`,
+                    indentation: config.indentation,
+                })
+            }
+        })
+    }
 }

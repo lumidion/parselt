@@ -1,6 +1,6 @@
-import { styleDirectories, styleFiles, compareDirectories, compareFiles, IScanResult } from './service'
-import { FormatConfig, MultiDirectoryInstanceConfig, ScanConfig } from './config/config'
-import { loadNewFileTemplate } from './loader'
+import { IScanResult, ScanningService } from './services/ScanningService'
+import { AddTranslationFileConfig, FormatConfig, ScanConfig } from './config/config'
+import { createFileFromTemplate } from './services/FileService'
 import {
     IGreaterNumberOfKeysError,
     IScanningError,
@@ -8,19 +8,23 @@ import {
     ScanningErrorTypes,
 } from './errorCollector'
 import { handleScanningErrors } from './errors'
-import { KeyModifierService } from './key-modifier'
+import { KeyModifierService } from './services/KeyModifierService'
 import { logTable } from './logger'
-import { deleteExcessFilesFromDirectories } from './fileUtils'
+import { deleteExcessFilesFromDirectories } from './services/FileService'
+import { FormattingService } from './services/FormattingService'
 
 const keyModifierService = new KeyModifierService()
 
 export const format = (config: FormatConfig) => {
+    const errorCollector = new ScanningErrorsCollector()
+    const formattingService = new FormattingService()
+    const scanningService = new ScanningService(errorCollector)
     config.instances.forEach((instanceConfig) => {
         if (instanceConfig.isMultiDirectory === true) {
-            styleDirectories(instanceConfig)
+            formattingService.styleDirectories(instanceConfig)
 
-            const errorCollector = compareDirectories(instanceConfig)
             if (config.shouldRemoveExtras) {
+                scanningService.compareDirectories(instanceConfig)
                 const errors = errorCollector.getAllErrors()
                 const greaterNumberErrors = errors.filter(
                     (error): error is IGreaterNumberOfKeysError =>
@@ -60,9 +64,10 @@ export const format = (config: FormatConfig) => {
                 }
             }
         } else {
-            styleFiles(instanceConfig)
-            const errorCollector = compareFiles(instanceConfig)
+            formattingService.styleFiles(instanceConfig)
+
             if (config.shouldRemoveExtras) {
+                scanningService.compareFiles(instanceConfig)
                 const errors = errorCollector.getAllErrors()
                 const greaterNumberErrors = errors.filter(
                     (error): error is IGreaterNumberOfKeysError =>
@@ -76,11 +81,13 @@ export const format = (config: FormatConfig) => {
 }
 
 export const scan = (config: ScanConfig): IScanResult => {
+    const errorCollector = new ScanningErrorsCollector()
+    const scanningService = new ScanningService(errorCollector)
     let errors: IScanningError[] = []
     let warnings: IScanningError[] = []
     config.instances.forEach((instanceConfig) => {
         if (instanceConfig.isMultiDirectory) {
-            const errorCollector = compareDirectories(instanceConfig)
+            scanningService.compareDirectories(instanceConfig)
             if (config.shouldLogOutput) {
                 handleScanningErrors(errorCollector, instanceConfig.name, instanceConfig.shouldPrintResultSummaryOnly)
             }
@@ -88,7 +95,7 @@ export const scan = (config: ScanConfig): IScanResult => {
             errors = errors.concat(errorCollector.getAllErrors())
             warnings = warnings.concat(errorCollector.getAllWarnings())
         } else {
-            const errorCollector = compareFiles(instanceConfig)
+            scanningService.compareFiles(instanceConfig)
             if (config.shouldLogOutput) {
                 handleScanningErrors(errorCollector, instanceConfig.name, instanceConfig.shouldPrintResultSummaryOnly)
             }
@@ -104,7 +111,12 @@ export const scan = (config: ScanConfig): IScanResult => {
     }
 }
 
-export const addFileFromTemplate = (config: MultiDirectoryInstanceConfig, fileName: string, directories?: string[]) => {
+export const addTranslationFile = (config: AddTranslationFileConfig) => {
     const errorCollector = new ScanningErrorsCollector()
-    loadNewFileTemplate({ config, templateFileName: fileName, directories, errorCollector })
+    createFileFromTemplate({
+        config: config.instance,
+        templateFileName: config.fileName,
+        directories: config.directories,
+        errorCollector,
+    })
 }

@@ -84,8 +84,10 @@ export class ScanningErrorsCollector {
         if (shouldOnlyPrintSummary) {
             this.printSummary()
         } else {
-            this.printMessageForCollection(logWarning, this.warnings, 'warnings') //stuck at plural default
-            this.printMessageForCollection(logError, this.errors, 'errors') //stuck at plural default
+            const warningsMessage = this.warnings.length === 1 ? 'warning' : 'warnings'
+            const errorsMessage = this.errors.length === 1 ? 'error' : 'errors'
+            this.printMessageForCollection(logWarning, this.warnings, warningsMessage)
+            this.printMessageForCollection(logError, this.errors, errorsMessage)
             console.log('\n')
             this.printSummary()
         }

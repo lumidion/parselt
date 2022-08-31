@@ -1,18 +1,8 @@
-import yargs, { Arguments, config } from 'yargs'
+import yargs, { Arguments } from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import * as packageJson from '../package.json'
-import { addFileFromTemplate, format, scan } from './commands'
+import { addTranslationFile, format, scan } from './commands'
 import { ConfigLoader } from './config/ConfigLoader'
-import { logError } from './logger'
-
-const isArrayOfStrings = (arr: any[]): boolean => {
-    arr.forEach((el) => {
-        if (typeof el !== 'string') {
-            return false
-        }
-    })
-    return true
-}
 
 const configLoader = new ConfigLoader()
 
@@ -20,66 +10,34 @@ const init = () => {
     yargs(hideBin(process.argv))
         .usage('Usage: $0 <command> --instance-name')
         .version(packageJson.version)
-        // .command('add', 'Add translations', (yargs: any) => {
-        //     return yargs.command(
-        //         'file',
-        //         'Add translations file',
-        //         (yargs: any) => {
-        //             return yargs
-        //                 .option('file-name', {
-        //                     describe: 'File name for the file that should be added',
-        //                     type: 'string',
-        //                     requiresArg: true,
-        //                 })
-        //                 .option('instance-name', {
-        //                     describe: 'Instance name to which the formatting should pertain',
-        //                     type: 'string',
-        //                     requiresArg: true,
-        //                 })
-        //                 .option('directories', {
-        //                     describe:
-        //                         'Directories to which the file should be added (if option is not set, file will be added to all directories',
-        //                     type: 'string',
-        //                 }).argv
-        //         },
-        //         (argv: Arguments) => {
-        //             initializeCommandWithInstanceName(
-        //                 argv.instanceName,
-        //                 true
-        //             )((config, shouldRemoveExtras, name) => {
-        //                 if (name !== undefined) {
-        //                     config.instances.forEach((instanceConfig) => {
-        //                         if (instanceConfig.name === name) {
-        //                             if (instanceConfig.isMultiDirectory) {
-        //                                 if (argv.fileName !== undefined && typeof argv.fileName === 'string') {
-        //                                     if (argv.directories === undefined) {
-        //                                         addFileFromTemplate(instanceConfig, argv.fileName)
-        //                                     } else if (
-        //                                         argv.directories !== undefined &&
-        //                                         Array.isArray(argv.directories) &&
-        //                                         isArrayOfStrings(argv.directories)
-        //                                     ) {
-        //                                         addFileFromTemplate(instanceConfig, argv.fileName, argv.directories)
-        //                                     } else {
-        //                                         logError('--directories option must be an array of strings')
-        //                                     }
-        //                                 } else {
-        //                                     logError('--file-name option must be set')
-        //                                 }
-        //                             } else {
-        //                                 logError(
-        //                                     'This command can only be called for a multi directory instance. Please select another instance and try again.'
-        //                                 )
-        //                             }
-        //                         }
-        //                     })
-        //                 } else {
-        //                     logError('--instance-name must be set')
-        //                 }
-        //             })
-        //         }
-        //     )
-        // })
+        .command('add', 'Add translations', (yargs: any) => {
+            return yargs.command(
+                'file',
+                'Add translations file',
+                (yargs: any) => {
+                    return yargs
+                        .option('file-name', {
+                            describe: 'File name for the file that should be added',
+                            type: 'string',
+                            requiresArg: true,
+                        })
+                        .option('instance-name', {
+                            describe: 'Instance name to which the formatting should pertain',
+                            type: 'string',
+                            requiresArg: true,
+                        })
+                        .option('directories', {
+                            describe:
+                                'Directories to which the file should be added (if option is not set, file will be added to all directories',
+                            type: 'string',
+                        }).argv
+                },
+                (argv: Arguments) => {
+                    const config = configLoader.loadAddTranslationFileConfig(argv)
+                    addTranslationFile(config)
+                }
+            )
+        })
         .command(
             'format',
             'Format translation files so that keys are in alphabetical order',

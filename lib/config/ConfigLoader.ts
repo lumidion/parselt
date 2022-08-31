@@ -1,5 +1,6 @@
 import fs from 'fs'
 import {
+    AddTranslationFileConfig,
     FileTypes,
     FormatConfig,
     InstanceConfig,
@@ -49,6 +50,24 @@ const multiDirectorySchema: JSONSchemaType<MultiDirectoryInstanceConfig> = {
 const singleDirectoryValidator = ajv.compile(singleDirectorySchema)
 const multiDirectoryValidator = ajv.compile(multiDirectorySchema)
 
+const parseDirectoriesOption = (directories: unknown): string[] | undefined => {
+    if (directories !== undefined) {
+        if (Array.isArray(directories)) {
+            directories.forEach((dir) => {
+                if (typeof dir !== 'string') {
+                    throw new Error(`Invalid input for directory: ${dir}. --directories must be an array of strings`)
+                }
+            })
+        } else {
+            throw new Error(
+                `Invalid input for directories. Type of input was not an array. --directories must be an array of strings.`
+            )
+        }
+    } else {
+        return undefined
+    }
+}
+
 export class ConfigLoader {
     private readonly configPath: string
     constructor(configPath?: string) {
@@ -82,41 +101,22 @@ export class ConfigLoader {
     }
 
     private filterInstancesByInstanceName(instanceName: string | undefined, config: ParseltConfig): InstanceConfig[] {
-        const finalInstances = instanceName
-            ? config.instances.filter((instance) => instance.name === instanceName)
-            : config.instances
-        if (finalInstances.length === 0) {
-            const instanceNames = config.instances.map((instance) => instance.name)
-            throw new Error(`${instanceName} invalid. Valid instance names from config: ${instanceNames.join(', ')}`)
+        if (instanceName !== undefined) {
+            const finalInstances = instanceName
+                ? config.instances.filter((instance) => instance.name === instanceName)
+                : config.instances
+            if (finalInstances.length === 0) {
+                const instanceNames = config.instances.map((instance) => instance.name)
+                throw new Error(
+                    `${instanceName} invalid. Valid instance names from config: ${instanceNames.join(', ')}`
+                )
+            } else {
+                return finalInstances
+            }
         } else {
-            return finalInstances
+            return config.instances
         }
     }
-
-    // initializeCommandWithInstanceName =
-    //     (instanceName: unknown, shouldRemoveExtras: boolean) =>
-    //     (func: (config: ParseltConfig, shouldRemoveExtras: boolean, instanceName?: string) => void) => {
-    //         try {
-    //             const config = loadConfig()
-    //             if (instanceName !== undefined) {
-    //                 if (typeof instanceName === 'string' && isInstanceNameValid(instanceName, config)) {
-    //                     func(config, shouldRemoveExtras, instanceName)
-    //                 } else {
-    //                     throw new Error(
-    //                         'Instance name is invalid. Please choose an instance name that corresponds with an instance in the config'
-    //                     )
-    //                 }
-    //             } else {
-    //                 func(config, shouldRemoveExtras)
-    //             }
-    //         } catch (error: any) {
-    //             if (error?.message) {
-    //                 logError(error.message)
-    //             } else {
-    //                 logError('Could not perform command')
-    //             }
-    //         }
-    //     }
 
     loadFormatConfig(argv: any): FormatConfig {
         const mainConfig = this.loadConfigFromFile(this.configPath)
@@ -126,6 +126,21 @@ export class ConfigLoader {
             shouldRemoveExtras: argv?.removeExtras ? argv.removeExtras : false,
         }
         return finalConfig
+    }
+
+    loadAddTranslationFileConfig(argv: any): AddTranslationFileConfig {
+        const mainConfig = this.loadConfigFromFile(this.configPath)
+        const instance = this.filterInstancesByInstanceName(argv?.instanceName, mainConfig)[0]
+        if (instance.isMultiDirectory === true) {
+            const finalConfig: AddTranslationFileConfig = {
+                instance,
+                fileName: argv?.fileName,
+                directories: parseDirectoriesOption(argv?.directories),
+            }
+            return finalConfig
+        } else {
+            throw new Error(`Instance with instance name, ${instance.name}, must be a multidirectory instance`)
+        }
     }
 
     loadScanConfig(argv: any): ScanConfig {
