@@ -1,4 +1,4 @@
-import { FileTypes, ParseltConfig } from '../../lib/config'
+import { FileTypes, ParseltConfig } from '../../lib/config/config'
 
 export const createConfig = (dirName: string): ParseltConfig => {
     const dirPath = `./test/test-directories/${dirName}`
