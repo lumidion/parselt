@@ -13,13 +13,12 @@ import { logTable } from './logger'
 import { FormattingService } from './services/FormattingService'
 
 export const format = (config: FormatConfig) => {
-    const errorCollector = new ScanningErrorsCollector()
-    const fileService = new FileService(errorCollector)
-    const formattingService = new FormattingService(fileService)
-    const scanningService = new ScanningService(errorCollector, fileService)
-    const keyModifierService = new KeyModifierService(fileService)
-
     config.instances.forEach((instanceConfig) => {
+        const errorCollector = new ScanningErrorsCollector()
+        const fileService = new FileService(errorCollector)
+        const formattingService = new FormattingService(fileService)
+        const scanningService = new ScanningService(errorCollector, fileService)
+        const keyModifierService = new KeyModifierService(fileService)
         if (instanceConfig.isMultiDirectory === true) {
             formattingService.styleDirectories(instanceConfig)
 
@@ -74,20 +73,36 @@ export const format = (config: FormatConfig) => {
                         error.type === ScanningErrorTypes.GREATER_NUMBER_OF_CHILD_KEYS
                 )
 
-                keyModifierService.removeGreaterNumberErrors(greaterNumberErrors, instanceConfig.indentation)
+                const removedErrors = keyModifierService.removeGreaterNumberErrors(
+                    greaterNumberErrors,
+                    instanceConfig.indentation
+                )
+
+                const keys = Object.keys(removedErrors)
+
+                if (keys.length > 0) {
+                    const log = keys.map((key) => {
+                        let numberOfErrors = 0
+                        removedErrors[key].forEach((error) => (numberOfErrors += error.keyNames.length))
+                        return {
+                            'File Path': key,
+                            'Number of Keys Removed': numberOfErrors,
+                        }
+                    })
+                    logTable(log)
+                }
             }
         }
     })
 }
 
 export const scan = (config: ScanConfig): IScanResult => {
-    const errorCollector = new ScanningErrorsCollector()
-    const fileService = new FileService(errorCollector)
-    const scanningService = new ScanningService(errorCollector, fileService)
-
     let errors: IScanningError[] = []
     let warnings: IScanningError[] = []
     config.instances.forEach((instanceConfig) => {
+        const errorCollector = new ScanningErrorsCollector()
+        const fileService = new FileService(errorCollector)
+        const scanningService = new ScanningService(errorCollector, fileService)
         if (instanceConfig.isMultiDirectory) {
             scanningService.compareDirectories(instanceConfig)
             if (config.shouldLogOutput) {
