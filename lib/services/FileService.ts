@@ -38,9 +38,18 @@ export class FileService {
         }
     }
 
-    loadAllFromDirectory = (directoryPath: string, shouldCollectErrors: boolean): Dirent[] | undefined => {
+    loadAllFromDirectory = (directoryPath: string, shouldCollectErrors: boolean): Dirent[] => {
         try {
-            return fs.readdirSync(directoryPath, { withFileTypes: true })
+            const dirents = fs.readdirSync(directoryPath, { withFileTypes: true })
+            if (dirents.length === 0 && shouldCollectErrors) {
+                this.errorCollector.addError({
+                    type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
+                    path: directoryPath,
+                    pathType: PathTypes.DIRECTORY,
+                    msg: 'No files found in directory. Please make sure that the path is correct and that the directory contains the right files.',
+                })
+            }
+            return []
         } catch (error) {
             if (shouldCollectErrors) {
                 this.errorCollector.addError({
@@ -50,6 +59,7 @@ export class FileService {
                     msg: 'Could not load files from directory. Please make sure that the directory exists and try again.',
                 })
             }
+            return []
         }
     }
 
@@ -114,7 +124,7 @@ export class FileService {
         const dirs = this.loadAllFromDirectory(rootDirectoryPath, false)
         const mainFiles = this.loadAllFromDirectory(`${rootDirectoryPath}/${mainDirectoryName}`, false)
         const mainFileNames: string[] = []
-        mainFiles?.forEach((mainFile) => {
+        mainFiles.forEach((mainFile) => {
             const fileTypeOption = FileService.getFileTypeForFile(mainFile.name)
             if (fileTypeOption) {
                 mainFileNames.push(mainFile.name)
@@ -122,21 +132,20 @@ export class FileService {
         })
 
         const removedFileNames: string[] = []
+        //TODO: create error messages for all cases where template file or directory cannot be loaded
         if (dirs !== undefined) {
             dirs.forEach((directory) => {
                 if (directory.isDirectory() && directory.name !== mainDirectoryName) {
                     const currentDirectoryPath = `${rootDirectoryPath}/${directory.name}`
                     const childFiles = this.loadAllFromDirectory(currentDirectoryPath, false)
-                    if (childFiles) {
-                        childFiles.forEach((file) => {
-                            const fileTypeOption = FileService.getFileTypeForFile(file.name)
-                            if (fileTypeOption && !mainFileNames.includes(file.name)) {
-                                const filePathToDelete = `${currentDirectoryPath}/${file.name}`
-                                fs.rmSync(`${currentDirectoryPath}/${file.name}`)
-                                removedFileNames.push(filePathToDelete)
-                            }
-                        })
-                    }
+                    childFiles.forEach((file) => {
+                        const fileTypeOption = FileService.getFileTypeForFile(file.name)
+                        if (fileTypeOption && !mainFileNames.includes(file.name)) {
+                            const filePathToDelete = `${currentDirectoryPath}/${file.name}`
+                            fs.rmSync(`${currentDirectoryPath}/${file.name}`)
+                            removedFileNames.push(filePathToDelete)
+                        }
+                    })
                 }
             })
         }

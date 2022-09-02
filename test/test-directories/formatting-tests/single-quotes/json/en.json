@@ -1,3 +1,0 @@
-{
-    "SAMPLE_WITH_DOUBLEQUOTES_REQUIRED": "%{insertVariable} isn't a sample that can be parsed with single quotes"
-}

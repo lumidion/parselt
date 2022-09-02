@@ -32,13 +32,12 @@ export class FormattingService {
     styleFiles(config: SingleDirectoryInstanceConfig) {
         const errorCollector = new ScanningErrorsCollector()
         const files = this.fileService.loadAllFromDirectory(config.rootDirectoryPath, true)
-        if (files !== undefined) {
-            files.forEach((file) => {
-                if (FileService.shouldFileBeScanned(file, config.fileType, config.filePrefix)) {
-                    this.styleFile(`${config.rootDirectoryPath}/${file.name}`, config.indentation)
-                }
-            })
-        }
+
+        files.forEach((file) => {
+            if (FileService.shouldFileBeScanned(file, config.fileType, config.filePrefix)) {
+                this.styleFile(`${config.rootDirectoryPath}/${file.name}`, config.indentation)
+            }
+        })
         handleFormattingErrors(errorCollector, config.name, config.shouldPrintResultSummaryOnly)
     }
 
@@ -46,21 +45,17 @@ export class FormattingService {
         const errorCollector = new ScanningErrorsCollector()
         const dirs = this.fileService.loadAllFromDirectory(config.rootDirectoryPath, true)
 
-        if (dirs !== undefined) {
-            dirs.forEach((directory) => {
-                if (directory.isDirectory()) {
-                    const currentDirectoryPath = `${config.rootDirectoryPath}/${directory.name}`
-                    const files = this.fileService.loadAllFromDirectory(currentDirectoryPath, true)
-                    if (files !== undefined) {
-                        files.forEach((file) => {
-                            if (FileService.shouldFileBeScanned(file, config.fileType)) {
-                                this.styleFile(`${currentDirectoryPath}/${file.name}`, config.indentation)
-                            }
-                        })
+        dirs.forEach((directory) => {
+            if (directory.isDirectory()) {
+                const currentDirectoryPath = `${config.rootDirectoryPath}/${directory.name}`
+                const files = this.fileService.loadAllFromDirectory(currentDirectoryPath, true)
+                files.forEach((file) => {
+                    if (FileService.shouldFileBeScanned(file, config.fileType)) {
+                        this.styleFile(`${currentDirectoryPath}/${file.name}`, config.indentation)
                     }
-                }
-            })
-        }
+                })
+            }
+        })
 
         handleFormattingErrors(errorCollector, config.name, config.shouldPrintResultSummaryOnly)
     }

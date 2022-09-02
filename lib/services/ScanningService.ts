@@ -41,40 +41,38 @@ export class ScanningService {
         )
         const mainObj: any = {}
 
-        if (dirs !== undefined && mainFiles !== undefined) {
-            mainFiles.forEach((file) => {
-                const childObj = this.fileService.getFileAsObject(
-                    `${config.rootDirectoryPath}/${config.mainDirectoryName}/${file.name}`,
-                    true
-                )
-                if (childObj !== undefined) {
-                    mainObj[file.name] = childObj
-                }
-            })
-            dirs.forEach((directory) => {
-                if (directory.isDirectory() && directory.name !== config.mainDirectoryName) {
-                    const currentDirectoryPath = `${config.rootDirectoryPath}/${directory.name}`
-                    mainFiles.forEach((file) => {
-                        if (FileService.shouldFileBeScanned(file, config.fileType)) {
-                            const parsedFile = this.fileService.getFileAsObject(
-                                `${currentDirectoryPath}/${file.name}`,
-                                true
-                            )
-                            if (parsedFile) {
-                                const mainFilePath = `${config.rootDirectoryPath}/${config.mainDirectoryName}/${file.name}`
-                                const childFilePath = `${currentDirectoryPath}/${file.name}`
-                                this.compareObjects({
-                                    mainObject: mainObj[file.name],
-                                    childObject: parsedFile,
-                                    mainFilePath,
-                                    childFilePath,
-                                })
-                            }
+        mainFiles.forEach((file) => {
+            const childObj = this.fileService.getFileAsObject(
+                `${config.rootDirectoryPath}/${config.mainDirectoryName}/${file.name}`,
+                true
+            )
+            if (childObj !== undefined) {
+                mainObj[file.name] = childObj
+            }
+        })
+        dirs.forEach((directory) => {
+            if (directory.isDirectory() && directory.name !== config.mainDirectoryName) {
+                const currentDirectoryPath = `${config.rootDirectoryPath}/${directory.name}`
+                mainFiles.forEach((file) => {
+                    if (FileService.shouldFileBeScanned(file, config.fileType)) {
+                        const parsedFile = this.fileService.getFileAsObject(
+                            `${currentDirectoryPath}/${file.name}`,
+                            true
+                        )
+                        if (parsedFile) {
+                            const mainFilePath = `${config.rootDirectoryPath}/${config.mainDirectoryName}/${file.name}`
+                            const childFilePath = `${currentDirectoryPath}/${file.name}`
+                            this.compareObjects({
+                                mainObject: mainObj[file.name],
+                                childObject: parsedFile,
+                                mainFilePath,
+                                childFilePath,
+                            })
                         }
-                    })
-                }
-            })
-        }
+                    }
+                })
+            }
+        })
     }
 
     compareFiles = (config: SingleDirectoryInstanceConfig): ScanningErrorsCollector => {
@@ -83,7 +81,8 @@ export class ScanningService {
         const mainObj = this.fileService.getFileAsObject(`${config.rootDirectoryPath}/${config.mainFileName}`, true)
 
         const files = this.fileService.loadAllFromDirectory(config.rootDirectoryPath, true)
-        if (mainObj !== undefined && files !== undefined) {
+        if (mainObj !== undefined) {
+            //TODO: create error messages for all cases where template file or directory cannot be loaded
             const mainFilePath = `${config.rootDirectoryPath}/${config.mainFileName}`
 
             files.forEach((file) => {
@@ -184,6 +183,17 @@ export class ScanningService {
                 mainFilePath,
                 childFilePath,
             })
+        } else if (childObject === null) {
+            this.errorCollector.addError({
+                type: ScanningErrorTypes.EMPTY_VALUE,
+                mainKeyPath,
+                childKeyPath,
+                mainFilePath,
+                childFilePath,
+                keyName: childKeyPath ? childKeyPath : '',
+            })
+        } else if (mainObject === null) {
+            return
         } else if (typeof mainObject === 'object' && typeof childObject === 'object') {
             const mainObjectKeys = Object.keys(mainObject)
             const childObjectKeys = Object.keys(childObject)
