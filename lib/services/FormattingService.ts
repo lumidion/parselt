@@ -30,7 +30,6 @@ export class FormattingService {
     }
 
     styleFiles(config: SingleDirectoryInstanceConfig) {
-        const errorCollector = new ScanningErrorsCollector()
         const files = this.fileService.loadAllFromDirectory(config.rootDirectoryPath)
 
         files.forEach((file) => {
@@ -38,11 +37,9 @@ export class FormattingService {
                 this.styleFile(`${config.rootDirectoryPath}/${file.name}`, config.indentation)
             }
         })
-        handleFormattingErrors(errorCollector, config.name, config.shouldPrintResultSummaryOnly)
     }
 
     styleDirectories(config: MultiDirectoryInstanceConfig) {
-        const errorCollector = new ScanningErrorsCollector()
         const dirs = this.fileService.loadAllFromDirectory(config.rootDirectoryPath)
 
         dirs.forEach((directory) => {
@@ -56,7 +53,5 @@ export class FormattingService {
                 })
             }
         })
-
-        handleFormattingErrors(errorCollector, config.name, config.shouldPrintResultSummaryOnly)
     }
 }

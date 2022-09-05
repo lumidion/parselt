@@ -7,7 +7,7 @@ import {
     ScanningErrorsCollector,
     ScanningErrorTypes,
 } from './errorCollector'
-import { handleScanningErrors } from './errors'
+import { handleFormattingErrors, handleScanningErrors } from './errors'
 import { KeyModifierService } from './services/KeyModifierService'
 import { logTable } from './logger'
 import { FormattingService } from './services/FormattingService'
@@ -65,7 +65,6 @@ export const format = (config: FormatConfig) => {
             }
         } else {
             formattingService.styleFiles(instanceConfig)
-
             if (config.shouldRemoveExtras) {
                 scanningService.compareFiles(instanceConfig)
                 const errors = errorCollector.getAllErrors()
@@ -93,6 +92,9 @@ export const format = (config: FormatConfig) => {
                     logTable(log)
                 }
             }
+        }
+        if (config.shouldLogOutput) {
+            handleFormattingErrors(errorCollector, instanceConfig.name, instanceConfig.shouldPrintResultSummaryOnly)
         }
     })
 }

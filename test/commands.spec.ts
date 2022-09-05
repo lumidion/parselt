@@ -1,4 +1,4 @@
-import { createScanConfigFromDirName, createScanConfigFromDirPath } from './test-utils/config'
+import { createScanConfigFromDirPath } from './test-utils/config'
 import { scan } from '../lib/commands'
 import { testFormatting } from './test-utils/testFormatting'
 import { FileTypes, InstanceConfig } from '../lib/config/config'
@@ -13,45 +13,44 @@ describe('Commands', () => {
     })
     describe('Scan Command', () => {
         it('when scanning empty directories should return appropriate errors', () => {
-            const config = createScanConfigFromDirPath('./test/test-directories/scanning-tests/empty-dir-test')
-            setupEmptyDirsWithConfig('empty-dir-test')((config) => {
+            setupEmptyDirsWithConfig('empty-dir-test')((config, testRootPath) => {
+                fs.rmSync(`${testRootPath}/multi-json-dir/en`, { recursive: true, force: true })
                 const result = scan({ instances: config.instances, shouldLogOutput: false })
-                const dirPath = config.instances[0].rootDirectoryPath.replace('/single-json-dir', '')
                 expect(result.errors).toStrictEqual([
                     {
                         msg: 'File could not be parsed for scanning. Please make sure that the file exists and that the json structure is correct.',
                         type: 'could_not_load_path',
-                        path: `${dirPath}/single-json-dir/en.json`,
+                        path: `${testRootPath}/single-json-dir/en.json`,
                         pathType: 'file',
                     },
                     {
                         msg: 'File could not be parsed for scanning. Please make sure that the file exists and that the json structure is correct.',
                         type: 'could_not_load_path',
-                        path: `${dirPath}/single-json-dir-with-prefix/auth.en.json`,
+                        path: `${testRootPath}/single-json-dir-with-prefix/auth.en.json`,
                         pathType: 'file',
                     },
                     {
                         msg: 'File could not be parsed for scanning. Please make sure that the file exists and that the yaml structure is correct.',
                         type: 'could_not_load_path',
-                        path: `${dirPath}/single-yaml-dir/en.yaml`,
+                        path: `${testRootPath}/single-yaml-dir/en.yaml`,
                         pathType: 'file',
                     },
                     {
                         msg: 'File could not be parsed for scanning. Please make sure that the file exists and that the yaml structure is correct.',
                         type: 'could_not_load_path',
-                        path: `${dirPath}/single-yaml-dir-with-prefix/auth.en.yaml`,
+                        path: `${testRootPath}/single-yaml-dir-with-prefix/auth.en.yaml`,
                         pathType: 'file',
                     },
                     {
                         msg: 'Could not load files from directory. Please make sure that the directory exists and try again.',
                         type: 'could_not_load_path',
-                        path: `${dirPath}/multi-json-dir/en`,
+                        path: `${testRootPath}/multi-json-dir/en`,
                         pathType: 'directory',
                     },
                     {
-                        msg: 'Could not load files from directory. Please make sure that the directory exists and try again.',
+                        msg: 'No files found in directory. Please make sure that the path is correct and that the directory contains the right files.',
                         type: 'could_not_load_path',
-                        path: `${dirPath}/multi-yaml-dir/en`,
+                        path: `${testRootPath}/multi-yaml-dir/en`,
                         pathType: 'directory',
                     },
                 ])
@@ -83,23 +82,17 @@ describe('Commands', () => {
                     type: 'could_not_load_path',
                     path: './test/test-directories/scanning-tests/broken-file-test/single-yaml-dir-with-prefix/auth.en.yaml',
                     pathType: 'file',
-                    msg: 'File could not be parsed for scanning. Please make sure that the file exists and that the yaml structure is correct.',
+                    msg: 'File was found with invalid content and could not be parsed for scanning. Either it has null content or the file structure is incorrect.',
                 },
                 {
                     type: 'could_not_load_path',
-                    path: './test/test-directories/scanning-tests/broken-file-test/multi-json-dir/fr/general.json',
+                    path: './test/test-directories/scanning-tests/broken-file-test/multi-json-dir/en/general.json',
                     pathType: 'file',
                     msg: 'File was found with invalid content and could not be parsed for scanning. Either it has null content or the file structure is incorrect.',
                 },
                 {
                     type: 'could_not_load_path',
                     path: './test/test-directories/scanning-tests/broken-file-test/multi-yaml-dir/en/general.yaml',
-                    pathType: 'file',
-                    msg: 'File was found with invalid content and could not be parsed for scanning. Either it has null content or the file structure is incorrect.',
-                },
-                {
-                    type: 'could_not_load_path',
-                    path: './test/test-directories/scanning-tests/broken-file-test/multi-yaml-dir/fr/general.yaml',
                     pathType: 'file',
                     msg: 'File was found with invalid content and could not be parsed for scanning. Either it has null content or the file structure is incorrect.',
                 },

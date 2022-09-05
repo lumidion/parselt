@@ -64,6 +64,7 @@ export class FileService {
                     }
                 }
             })
+
             return items
         }
 
@@ -78,7 +79,7 @@ export class FileService {
                     msg: 'No files found in directory. Please make sure that the path is correct and that the directory contains the right files.',
                 })
             }
-            return []
+            return dirents
         } catch (error) {
             if (this.errorCollector) {
                 this.errorCollector.addError({

@@ -17,13 +17,14 @@ const writeObjectToFile = (obj: any, path: string, indentation: Indentation) => 
 }
 
 export const setupEmptyDirsWithConfig =
-    (testName: string) =>
-    (func: (config: ParseltConfig) => void): void => {
+    (testName: string, shouldCleanup = true) =>
+    (func: (config: ParseltConfig, testRootPath: string) => void): void => {
         const testId = uuid.v4()
         const rootDirName = `${testName}-${testId.slice(0, 7)}`
         const config = createScanConfigFromDirName(rootDirName)
+        const testRootPath = `./test/tmp/${rootDirName}`
 
-        fs.mkdirSync(`./test/tmp/${rootDirName}`, { recursive: true })
+        fs.mkdirSync(testRootPath, { recursive: true })
 
         config.instances.forEach((instance) => {
             fs.mkdirSync(instance.rootDirectoryPath)
@@ -33,15 +34,21 @@ export const setupEmptyDirsWithConfig =
             }
         })
         try {
-            func(config)
+            func(config, testRootPath)
         } finally {
-            fs.rmSync(`./test/tmp/${rootDirName}`, { recursive: true, force: true })
+            if (shouldCleanup) {
+                fs.rmSync(testRootPath, { recursive: true, force: true })
+            }
         }
     }
 
 export const setupScanningTest =
-    (testName: string, mainObj: any, childObj: any) => (func: (config: ParseltConfig) => void) => {
-        setupEmptyDirsWithConfig(testName)((config) => {
+    (testName: string, mainObj: any, childObj: any, shouldCleanup = true) =>
+    (func: (config: ParseltConfig) => void) => {
+        setupEmptyDirsWithConfig(
+            testName,
+            shouldCleanup
+        )((config) => {
             config.instances.forEach((instance) => {
                 const writeToFile = (obj: any, endPath: string) => {
                     const finalPath = `${instance.rootDirectoryPath}/${endPath}`
