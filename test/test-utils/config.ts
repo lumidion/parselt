@@ -1,7 +1,7 @@
 import { FileTypes, ParseltConfig } from '../../lib/config/config'
 
 export const createScanConfigFromDirName = (dirName: string): ParseltConfig => {
-    return createScanConfigFromDirPath(`./test/test-directories/scanning-tests/${dirName}`)
+    return createScanConfigFromDirPath(`./test/tmp/${dirName}`)
 }
 
 export const createScanConfigFromDirPath = (dirPath: string): ParseltConfig => {

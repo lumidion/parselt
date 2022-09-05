@@ -4,12 +4,12 @@ import { AddTranslationFileConfig, FileTypes, Indentation } from '../config/conf
 import { PathTypes, ScanningErrorsCollector, ScanningErrorTypes } from '../errorCollector'
 
 export class FileService {
-    private readonly errorCollector: ScanningErrorsCollector
-    constructor(errorCollector: ScanningErrorsCollector) {
+    private readonly errorCollector: ScanningErrorsCollector | undefined
+    constructor(errorCollector?: ScanningErrorsCollector) {
         this.errorCollector = errorCollector
     }
 
-    getFileAsObject(filePath: string, shouldRecordErrors: boolean): object | undefined {
+    getFileAsObject(filePath: string): object | undefined {
         const fileType = FileService.getFileTypeForFile(filePath)
         if (fileType !== undefined) {
             try {
@@ -17,13 +17,13 @@ export class FileService {
 
                 if (fileType === FileTypes.YAML) {
                     const loadedObject = jsYaml.load(file)
-                    return this.parseFileIntoObject(loadedObject, filePath, shouldRecordErrors)
+                    return this.parseFileIntoObject(loadedObject, filePath)
                 } else if (fileType === FileTypes.JSON) {
                     const loadedObject = JSON.parse(file)
-                    return this.parseFileIntoObject(loadedObject, filePath, shouldRecordErrors)
+                    return this.parseFileIntoObject(loadedObject, filePath)
                 }
             } catch (error) {
-                if (shouldRecordErrors) {
+                if (this.errorCollector) {
                     this.errorCollector.addError({
                         type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
                         path: filePath,
@@ -38,10 +38,39 @@ export class FileService {
         }
     }
 
-    loadAllFromDirectory = (directoryPath: string, shouldCollectErrors: boolean): Dirent[] => {
+    mapFileObjectsInDirectory =
+        <A>(
+            directoryPath: string,
+            fileType: FileTypes,
+            shouldIncludeSubDirectories: boolean,
+            expectedFilePrefix?: string
+        ) =>
+        (func: (fileName: string, obj: object) => A): A[] => {
+            const files = this.loadAllFromDirectory(directoryPath)
+            const items: A[] = []
+            files.forEach((file) => {
+                if (file.isDirectory() && shouldIncludeSubDirectories) {
+                    const subItems = this.mapFileObjectsInDirectory<A>(
+                        `${directoryPath}/${file.name}`,
+                        fileType,
+                        true
+                    )(func)
+                    items.concat(subItems)
+                } else if (FileService.shouldFileBeScanned(file, fileType, expectedFilePrefix)) {
+                    const obj = this.getFileAsObject(`${directoryPath}/${file.name}`)
+                    if (obj !== undefined) {
+                        const item = func(file.name, obj)
+                        items.push(item)
+                    }
+                }
+            })
+            return items
+        }
+
+    loadAllFromDirectory(directoryPath: string): Dirent[] {
         try {
             const dirents = fs.readdirSync(directoryPath, { withFileTypes: true })
-            if (dirents.length === 0 && shouldCollectErrors) {
+            if (dirents.length === 0 && this.errorCollector) {
                 this.errorCollector.addError({
                     type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
                     path: directoryPath,
@@ -51,7 +80,7 @@ export class FileService {
             }
             return []
         } catch (error) {
-            if (shouldCollectErrors) {
+            if (this.errorCollector) {
                 this.errorCollector.addError({
                     type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
                     path: directoryPath,
@@ -63,10 +92,10 @@ export class FileService {
         }
     }
 
-    private parseFileIntoObject = (obj: unknown, filePath: string, shouldRecordErrors: boolean): object | undefined => {
+    private parseFileIntoObject = (obj: unknown, filePath: string): object | undefined => {
         if (typeof obj === 'object' && obj !== null) {
             return obj
-        } else if (shouldRecordErrors) {
+        } else if (this.errorCollector) {
             this.errorCollector.addError({
                 type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
                 path: filePath,
@@ -120,31 +149,40 @@ export class FileService {
         )
     }
 
-    deleteExcessFilesFromDirectories = (rootDirectoryPath: string, mainDirectoryName: string): string[] => {
-        const dirs = this.loadAllFromDirectory(rootDirectoryPath, false)
-        const mainFiles = this.loadAllFromDirectory(`${rootDirectoryPath}/${mainDirectoryName}`, false)
+    deleteExcessFilesFromDirectories = (
+        rootDirectoryPath: string,
+        mainDirectoryName: string,
+        fileType: FileTypes,
+        expectedFilePrefix?: string
+    ): string[] => {
+        const dirs = this.loadAllFromDirectory(rootDirectoryPath)
+
         const mainFileNames: string[] = []
-        mainFiles.forEach((mainFile) => {
-            const fileTypeOption = FileService.getFileTypeForFile(mainFile.name)
-            if (fileTypeOption) {
-                mainFileNames.push(mainFile.name)
-            }
+
+        this.mapFileObjectsInDirectory(
+            `${rootDirectoryPath}/${mainDirectoryName}`,
+            fileType,
+            false,
+            expectedFilePrefix
+        )((fileName) => {
+            mainFileNames.push(fileName)
         })
 
         const removedFileNames: string[] = []
-        //TODO: create error messages for all cases where template file or directory cannot be loaded
+
         if (dirs !== undefined) {
             dirs.forEach((directory) => {
                 if (directory.isDirectory() && directory.name !== mainDirectoryName) {
                     const currentDirectoryPath = `${rootDirectoryPath}/${directory.name}`
-                    const childFiles = this.loadAllFromDirectory(currentDirectoryPath, false)
-                    childFiles.forEach((file) => {
-                        const fileTypeOption = FileService.getFileTypeForFile(file.name)
-                        if (fileTypeOption && !mainFileNames.includes(file.name)) {
-                            const filePathToDelete = `${currentDirectoryPath}/${file.name}`
-                            fs.rmSync(`${currentDirectoryPath}/${file.name}`)
-                            removedFileNames.push(filePathToDelete)
-                        }
+                    this.mapFileObjectsInDirectory(
+                        currentDirectoryPath,
+                        fileType,
+                        false,
+                        expectedFilePrefix
+                    )((fileName) => {
+                        const filePathToDelete = `${currentDirectoryPath}/${fileName}`
+                        fs.rmSync(filePathToDelete)
+                        removedFileNames.push(filePathToDelete)
                     })
                 }
             })
@@ -154,8 +192,7 @@ export class FileService {
 
     createFileFromTemplate(config: AddTranslationFileConfig) {
         const mainObj = this.getFileAsObject(
-            `${config.instance.rootDirectoryPath}/${config.instance.mainDirectoryName}/${config.fileName}`,
-            false
+            `${config.instance.rootDirectoryPath}/${config.instance.mainDirectoryName}/${config.fileName}`
         )
 
         if (mainObj !== undefined) {

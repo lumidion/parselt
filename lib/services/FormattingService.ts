@@ -24,14 +24,14 @@ export class FormattingService {
     }
 
     private styleFile = (filePath: string, indentation: Indentation) => {
-        const parsedFile = this.fileService.getFileAsObject(filePath, true)
+        const parsedFile = this.fileService.getFileAsObject(filePath)
         const sortedObj = this.sortObjectKeysAlphabetically(parsedFile)
         this.fileService.writeObjectToFile(sortedObj, filePath, indentation)
     }
 
     styleFiles(config: SingleDirectoryInstanceConfig) {
         const errorCollector = new ScanningErrorsCollector()
-        const files = this.fileService.loadAllFromDirectory(config.rootDirectoryPath, true)
+        const files = this.fileService.loadAllFromDirectory(config.rootDirectoryPath)
 
         files.forEach((file) => {
             if (FileService.shouldFileBeScanned(file, config.fileType, config.filePrefix)) {
@@ -43,12 +43,12 @@ export class FormattingService {
 
     styleDirectories(config: MultiDirectoryInstanceConfig) {
         const errorCollector = new ScanningErrorsCollector()
-        const dirs = this.fileService.loadAllFromDirectory(config.rootDirectoryPath, true)
+        const dirs = this.fileService.loadAllFromDirectory(config.rootDirectoryPath)
 
         dirs.forEach((directory) => {
             if (directory.isDirectory()) {
                 const currentDirectoryPath = `${config.rootDirectoryPath}/${directory.name}`
-                const files = this.fileService.loadAllFromDirectory(currentDirectoryPath, true)
+                const files = this.fileService.loadAllFromDirectory(currentDirectoryPath)
                 files.forEach((file) => {
                     if (FileService.shouldFileBeScanned(file, config.fileType)) {
                         this.styleFile(`${currentDirectoryPath}/${file.name}`, config.indentation)

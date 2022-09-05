@@ -51,7 +51,8 @@ export const format = (config: FormatConfig) => {
 
                 const removedFileNames = fileService.deleteExcessFilesFromDirectories(
                     instanceConfig.rootDirectoryPath,
-                    instanceConfig.mainDirectoryName
+                    instanceConfig.mainDirectoryName,
+                    instanceConfig.fileType
                 )
 
                 if (removedFileNames.length > 0) {

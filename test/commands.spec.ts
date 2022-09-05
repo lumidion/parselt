@@ -1,58 +1,64 @@
-import { createScanConfigFromDirName } from './test-utils/config'
+import { createScanConfigFromDirName, createScanConfigFromDirPath } from './test-utils/config'
 import { scan } from '../lib/commands'
 import { testFormatting } from './test-utils/testFormatting'
 import { FileTypes, InstanceConfig } from '../lib/config/config'
-import { setupScanningTest } from './test-utils/setupAndTeardown'
+import { setupEmptyDirsWithConfig, setupScanningTest } from './test-utils/setupAndTeardown'
 import mainNormalScanWithErrorsTemplate from './test-directories/scanning-tests/normal-scan-with-errors/mainTemplate.json'
 import childNormalScanWithErrorsTemplate from './test-directories/scanning-tests/normal-scan-with-errors/childTemplate.json'
+import fs from 'fs'
 
 describe('Commands', () => {
+    afterAll(() => {
+        fs.rmdirSync('./test/tmp')
+    })
     describe('Scan Command', () => {
         it('when scanning empty directories should return appropriate errors', () => {
-            const config = createScanConfigFromDirName('empty-dir-test')
-            const result = scan({ instances: config.instances, shouldLogOutput: false })
-
-            expect(result.errors).toStrictEqual([
-                {
-                    msg: 'File could not be parsed for scanning. Please make sure that the file exists and that the json structure is correct.',
-                    type: 'could_not_load_path',
-                    path: './test/test-directories/scanning-tests/empty-dir-test/single-json-dir/en.json',
-                    pathType: 'file',
-                },
-                {
-                    msg: 'File could not be parsed for scanning. Please make sure that the file exists and that the json structure is correct.',
-                    type: 'could_not_load_path',
-                    path: './test/test-directories/scanning-tests/empty-dir-test/single-json-dir-with-prefix/auth.en.json',
-                    pathType: 'file',
-                },
-                {
-                    msg: 'File could not be parsed for scanning. Please make sure that the file exists and that the yaml structure is correct.',
-                    type: 'could_not_load_path',
-                    path: './test/test-directories/scanning-tests/empty-dir-test/single-yaml-dir/en.yaml',
-                    pathType: 'file',
-                },
-                {
-                    msg: 'File could not be parsed for scanning. Please make sure that the file exists and that the yaml structure is correct.',
-                    type: 'could_not_load_path',
-                    path: './test/test-directories/scanning-tests/empty-dir-test/single-yaml-dir-with-prefix/auth.en.yaml',
-                    pathType: 'file',
-                },
-                {
-                    msg: 'Could not load files from directory. Please make sure that the directory exists and try again.',
-                    type: 'could_not_load_path',
-                    path: './test/test-directories/scanning-tests/empty-dir-test/multi-json-dir/en',
-                    pathType: 'directory',
-                },
-                {
-                    msg: 'Could not load files from directory. Please make sure that the directory exists and try again.',
-                    type: 'could_not_load_path',
-                    path: './test/test-directories/scanning-tests/empty-dir-test/multi-yaml-dir/en',
-                    pathType: 'directory',
-                },
-            ])
+            const config = createScanConfigFromDirPath('./test/test-directories/scanning-tests/empty-dir-test')
+            setupEmptyDirsWithConfig('empty-dir-test')((config) => {
+                const result = scan({ instances: config.instances, shouldLogOutput: false })
+                const dirPath = config.instances[0].rootDirectoryPath.replace('/single-json-dir', '')
+                expect(result.errors).toStrictEqual([
+                    {
+                        msg: 'File could not be parsed for scanning. Please make sure that the file exists and that the json structure is correct.',
+                        type: 'could_not_load_path',
+                        path: `${dirPath}/single-json-dir/en.json`,
+                        pathType: 'file',
+                    },
+                    {
+                        msg: 'File could not be parsed for scanning. Please make sure that the file exists and that the json structure is correct.',
+                        type: 'could_not_load_path',
+                        path: `${dirPath}/single-json-dir-with-prefix/auth.en.json`,
+                        pathType: 'file',
+                    },
+                    {
+                        msg: 'File could not be parsed for scanning. Please make sure that the file exists and that the yaml structure is correct.',
+                        type: 'could_not_load_path',
+                        path: `${dirPath}/single-yaml-dir/en.yaml`,
+                        pathType: 'file',
+                    },
+                    {
+                        msg: 'File could not be parsed for scanning. Please make sure that the file exists and that the yaml structure is correct.',
+                        type: 'could_not_load_path',
+                        path: `${dirPath}/single-yaml-dir-with-prefix/auth.en.yaml`,
+                        pathType: 'file',
+                    },
+                    {
+                        msg: 'Could not load files from directory. Please make sure that the directory exists and try again.',
+                        type: 'could_not_load_path',
+                        path: `${dirPath}/multi-json-dir/en`,
+                        pathType: 'directory',
+                    },
+                    {
+                        msg: 'Could not load files from directory. Please make sure that the directory exists and try again.',
+                        type: 'could_not_load_path',
+                        path: `${dirPath}/multi-yaml-dir/en`,
+                        pathType: 'directory',
+                    },
+                ])
+            })
         })
         it('when scanning broken files should return appropriate errors', () => {
-            const config = createScanConfigFromDirName('broken-file-test')
+            const config = createScanConfigFromDirPath('./test/test-directories/scanning-tests/broken-file-test')
             const result = scan({ instances: config.instances, shouldLogOutput: false })
             expect(result.errors).toStrictEqual([
                 {
@@ -100,12 +106,11 @@ describe('Commands', () => {
             ])
         })
         describe('when scanning parsable files with errors', () => {
-            const config = createScanConfigFromDirName('normal-scan-with-errors')
             setupScanningTest(
-                config,
+                'normal-scan-with-errors',
                 mainNormalScanWithErrorsTemplate,
                 childNormalScanWithErrorsTemplate
-            )(() => {
+            )((config) => {
                 const configsForTest: [string, InstanceConfig][] = config.instances.map((instance) => [
                     instance.name,
                     instance,
@@ -114,17 +119,6 @@ describe('Commands', () => {
                     const result = scan({ instances: [instance], shouldLogOutput: false })
                     console.log(result)
                 })
-            })
-        })
-        it('when scanning normal files with errors should return appropriate errors', () => {
-            const config = createScanConfigFromDirName('normal-scan-with-errors')
-            setupScanningTest(
-                config,
-                mainNormalScanWithErrorsTemplate,
-                childNormalScanWithErrorsTemplate
-            )(() => {
-                const result = scan({ instances: config.instances, shouldLogOutput: false })
-                console.log(result)
             })
         })
     })

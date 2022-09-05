@@ -1,5 +1,5 @@
-import { MultiDirectoryInstanceConfig, SingleDirectoryInstanceConfig } from '../config/config'
-import { IScanningError, ScanningErrorsCollector, ScanningErrorTypes } from '../errorCollector'
+import { FileTypes, MultiDirectoryInstanceConfig, SingleDirectoryInstanceConfig } from '../config/config'
+import { IScanningError, PathTypes, ScanningErrorsCollector, ScanningErrorTypes } from '../errorCollector'
 import { FileService } from './FileService'
 
 export interface IScanResult {
@@ -33,93 +33,110 @@ export class ScanningService {
         this.fileService = fileService
         this.errorCollector = errorCollector
     }
+
+    private checkForMissingFilesInChild(
+        rootDirectoryPath: string,
+        mainFileNames: string[],
+        childFileNames: string[]
+    ): void {
+        if (mainFileNames.length !== childFileNames.length) {
+            mainFileNames.forEach((name) => {
+                if (!childFileNames.includes(name)) {
+                    this.errorCollector.addError({
+                        type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
+                        path: `${rootDirectoryPath}/${name}`,
+                        pathType: PathTypes.FILE,
+                        msg: `File could not be parsed for scanning. Please make sure that the file exists and that the file structure is correct.`,
+                    })
+                }
+            })
+        }
+    }
+
     compareDirectories(config: MultiDirectoryInstanceConfig): void {
-        const dirs = this.fileService.loadAllFromDirectory(config.rootDirectoryPath, true)
-        const mainFiles = this.fileService.loadAllFromDirectory(
-            `${config.rootDirectoryPath}/${config.mainDirectoryName}`,
-            true
-        )
+        const dirs = this.fileService.loadAllFromDirectory(config.rootDirectoryPath)
+
         const mainObj: any = {}
 
-        mainFiles.forEach((file) => {
-            const childObj = this.fileService.getFileAsObject(
-                `${config.rootDirectoryPath}/${config.mainDirectoryName}/${file.name}`,
-                true
-            )
-            if (childObj !== undefined) {
-                mainObj[file.name] = childObj
-            }
+        this.fileService.mapFileObjectsInDirectory(
+            `${config.rootDirectoryPath}/${config.mainDirectoryName}`,
+            config.fileType,
+            false
+        )((fileName, childObj) => {
+            mainObj[fileName] = childObj
         })
+
         dirs.forEach((directory) => {
             if (directory.isDirectory() && directory.name !== config.mainDirectoryName) {
                 const currentDirectoryPath = `${config.rootDirectoryPath}/${directory.name}`
-                mainFiles.forEach((file) => {
-                    if (FileService.shouldFileBeScanned(file, config.fileType)) {
-                        const parsedFile = this.fileService.getFileAsObject(
-                            `${currentDirectoryPath}/${file.name}`,
-                            true
-                        )
-                        if (parsedFile) {
-                            const mainFilePath = `${config.rootDirectoryPath}/${config.mainDirectoryName}/${file.name}`
-                            const childFilePath = `${currentDirectoryPath}/${file.name}`
-                            this.compareObjects({
-                                mainObject: mainObj[file.name],
-                                childObject: parsedFile,
-                                mainFilePath,
-                                childFilePath,
-                            })
-                        }
+
+                const correspondingScannedFiles: string[] = []
+                this.fileService.mapFileObjectsInDirectory(
+                    currentDirectoryPath,
+                    config.fileType,
+                    false
+                )((fileName, childObj) => {
+                    const childFilePath = `${currentDirectoryPath}/${fileName}`
+                    if (mainObj[fileName] !== undefined) {
+                        const mainFilePath = `${config.rootDirectoryPath}/${config.mainDirectoryName}/${fileName}`
+                        this.compareObjects({
+                            mainObject: mainObj[fileName],
+                            childObject: childObj,
+                            mainFilePath,
+                            childFilePath,
+                        })
+                        correspondingScannedFiles.push(fileName)
+                    } else {
+                        this.errorCollector.addError({
+                            type: ScanningErrorTypes.EXTRA_FILE_FOUND,
+                            path: childFilePath,
+                            pathType: PathTypes.FILE,
+                        })
                     }
                 })
+                const mainFileNames = Object.keys(mainObj)
+                this.checkForMissingFilesInChild(currentDirectoryPath, mainFileNames, correspondingScannedFiles)
             }
         })
     }
 
-    compareFiles = (config: SingleDirectoryInstanceConfig): ScanningErrorsCollector => {
-        const errorCollector = new ScanningErrorsCollector()
+    compareFiles = (config: SingleDirectoryInstanceConfig): void => {
+        const mainObj = this.fileService.getFileAsObject(`${config.rootDirectoryPath}/${config.mainFileName}`)
 
-        const mainObj = this.fileService.getFileAsObject(`${config.rootDirectoryPath}/${config.mainFileName}`, true)
-
-        const files = this.fileService.loadAllFromDirectory(config.rootDirectoryPath, true)
         if (mainObj !== undefined) {
-            //TODO: create error messages for all cases where template file or directory cannot be loaded
             const mainFilePath = `${config.rootDirectoryPath}/${config.mainFileName}`
-
-            files.forEach((file) => {
-                if (file.name === config.mainFileName) {
-                    return
-                } else if (!FileService.shouldFileBeScanned(file, config.fileType, config.filePrefix)) {
+            this.fileService.mapFileObjectsInDirectory(
+                config.rootDirectoryPath,
+                config.fileType,
+                false,
+                config.filePrefix
+            )((fileName, childObj) => {
+                if (fileName === config.mainFileName) {
                     return
                 } else {
-                    const childFilePath = `${config.rootDirectoryPath}/${file.name}`
-                    const childObj = this.fileService.getFileAsObject(`${config.rootDirectoryPath}/${file.name}`, true)
-
-                    if (childObj !== undefined) {
-                        if (config.shouldCheckFirstKey === true || config.shouldCheckFirstKey === undefined) {
-                            this.compareObjects({
-                                mainObject: mainObj,
-                                childObject: childObj,
-                                mainFilePath,
-                                childFilePath,
-                            })
-                        } else {
-                            const subMainObject = Object.values(mainObj)[0]
-                            const subChildObject = Object.values(childObj)[0]
-                            this.compareObjects({
-                                mainObject: subMainObject,
-                                childObject: subChildObject,
-                                mainKeyPath: Object.keys(mainObj)[0],
-                                childKeyPath: Object.keys(childObj)[0],
-                                mainFilePath,
-                                childFilePath,
-                            })
-                        }
+                    const childFilePath = `${config.rootDirectoryPath}/${fileName}`
+                    if (config.shouldCheckFirstKey === true || config.shouldCheckFirstKey === undefined) {
+                        this.compareObjects({
+                            mainObject: mainObj,
+                            childObject: childObj,
+                            mainFilePath,
+                            childFilePath,
+                        })
+                    } else {
+                        const subMainObject = Object.values(mainObj)[0]
+                        const subChildObject = Object.values(childObj)[0]
+                        this.compareObjects({
+                            mainObject: subMainObject,
+                            childObject: subChildObject,
+                            mainKeyPath: Object.keys(mainObj)[0],
+                            childKeyPath: Object.keys(childObj)[0],
+                            mainFilePath,
+                            childFilePath,
+                        })
                     }
                 }
             })
         }
-
-        return errorCollector
     }
 
     private scanValue({

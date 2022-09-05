@@ -89,7 +89,7 @@ export class KeyModifierService {
     ) {
         const fileTypeOption = FileService.getFileTypeForFile(filePath)
         if (fileTypeOption) {
-            const file = this.fileService.getFileAsObject(filePath, false)
+            const file = this.fileService.getFileAsObject(filePath)
             let newObject: any = lodash.cloneDeep(file)
             if (file) {
                 errors.forEach((error) => {

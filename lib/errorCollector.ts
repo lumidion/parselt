@@ -15,6 +15,7 @@ export enum ScanningErrorTypes {
     KEY_NOT_FOUND = 'key_not_found',
     INVALID_KEY_ORDERING = 'invalid_key_ordering',
     COULD_NOT_LOAD_PATH = 'could_not_load_path',
+    EXTRA_FILE_FOUND = 'extra_file_found',
 }
 
 export interface IGreaterNumberOfKeysError extends IKeyScanningError {
@@ -41,7 +42,7 @@ export enum PathTypes {
 }
 
 interface IFileError {
-    type: ScanningErrorTypes.COULD_NOT_LOAD_PATH
+    type: ScanningErrorTypes.COULD_NOT_LOAD_PATH | ScanningErrorTypes.EXTRA_FILE_FOUND
     path: string
     pathType: PathTypes
     msg?: string
@@ -102,6 +103,17 @@ export class ScanningErrorsCollector {
         }
     }
 
+    private isErrorFileType(error: IScanningError): error is IFileError {
+        if (
+            error.type !== ScanningErrorTypes.COULD_NOT_LOAD_PATH &&
+            error.type !== ScanningErrorTypes.EXTRA_FILE_FOUND
+        ) {
+            return true
+        } else {
+            return false
+        }
+    }
+
     private printMessageForCollection(logger: (msg: string) => void, collection: IScanningError[], msgType: string) {
         let currentFilePath = ''
         const logFileName = (filePath: string) => {
@@ -115,7 +127,7 @@ export class ScanningErrorsCollector {
             console.log('\n')
         }
         collection.forEach((error) => {
-            if (error.type !== ScanningErrorTypes.COULD_NOT_LOAD_PATH) {
+            if (!this.isErrorFileType(error)) {
                 if (currentFilePath !== error.childFilePath) {
                     wrapWithSpacing(() => {
                         logger('Main File Name:')
@@ -162,6 +174,9 @@ export class ScanningErrorsCollector {
                 return `Could not load ${error.pathType} for ${error.path}. Cause: ${
                     error.msg ? error.msg : 'File not found'
                 }`
+            }
+            case ScanningErrorTypes.EXTRA_FILE_FOUND: {
+                return `Found an unexpected file at: ${error.path}. No corresponding file found in the main language directory. Please either delete this file or create the corresponding file in the main language directory.`
             }
             case ScanningErrorTypes.SAME_VALUE_TYPES: {
                 return `Key path, ${error.childKeyPath}, in file, ${error.childFilePath}, contained the same value as ${error.mainKeyPath}, in ${error.mainFilePath}`
