@@ -1,6 +1,4 @@
 import { Indentation, MultiDirectoryInstanceConfig, SingleDirectoryInstanceConfig } from '../config/config'
-import { ScanningErrorsCollector } from '../errorCollector'
-import { handleFormattingErrors } from '../errors'
 import { FileService } from './FileService'
 
 export class FormattingService {

@@ -181,9 +181,11 @@ export class FileService {
                         false,
                         expectedFilePrefix
                     )((fileName) => {
-                        const filePathToDelete = `${currentDirectoryPath}/${fileName}`
-                        fs.rmSync(filePathToDelete)
-                        removedFileNames.push(filePathToDelete)
+                        if (!mainFileNames.includes(fileName)) {
+                            const filePathToDelete = `${currentDirectoryPath}/${fileName}`
+                            fs.rmSync(filePathToDelete)
+                            removedFileNames.push(filePathToDelete)
+                        }
                     })
                 }
             })
