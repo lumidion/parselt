@@ -9,7 +9,7 @@ import fs from 'fs'
 
 describe('Commands', () => {
     afterAll(() => {
-        fs.rmdirSync('./test/tmp')
+        fs.rmSync('./test/tmp', { recursive: true, force: true })
     })
     describe('Scan Command', () => {
         it('when scanning empty directories should return appropriate errors', () => {
@@ -110,7 +110,110 @@ describe('Commands', () => {
                 ])
                 it.each([...configsForTest])('should return relevant errors for %s test', (_, instance) => {
                     const result = scan({ instances: [instance], shouldLogOutput: false })
-                    console.log(result)
+
+                    const mainFilePath = instance.isMultiDirectory
+                        ? `${instance.rootDirectoryPath}/${instance.mainDirectoryName}/general.${instance.fileType}`
+                        : `${instance.rootDirectoryPath}/${instance.mainFileName}`
+
+                    const childFilePrefix =
+                        !instance.isMultiDirectory && instance.filePrefix ? `${instance.filePrefix}.` : ''
+                    const childFilePath = instance.isMultiDirectory
+                        ? `${instance.rootDirectoryPath}/fr/general.${instance.fileType}`
+                        : `${instance.rootDirectoryPath}/${childFilePrefix}fr.${instance.fileType}`
+                    const expectedErrors = [
+                        {
+                            type: 'invalid_key_ordering',
+                            mainKeyPath: 'GENERAL_SETTINGS.ARRAY_OF_NULL_KEY',
+                            childKeyPath: 'GENERAL_SETTINGS',
+                            mainFilePath: `${mainFilePath}`,
+                            childFilePath: `${childFilePath}`,
+                            keyName: 'ARRAY_OF_NULL_KEY',
+                        },
+                        {
+                            type: 'invalid_key_ordering',
+                            mainKeyPath: 'GENERAL_SETTINGS.ARRAY_OF_OBJECTS_KEY',
+                            childKeyPath: 'GENERAL_SETTINGS',
+                            mainFilePath: `${mainFilePath}`,
+                            childFilePath: `${childFilePath}`,
+                            keyName: 'ARRAY_OF_OBJECTS_KEY',
+                        },
+                        {
+                            type: 'invalid_key_ordering',
+                            mainKeyPath: 'GENERAL_SETTINGS.ARRAY_OF_STRINGS_KEY',
+                            childKeyPath: 'GENERAL_SETTINGS',
+                            mainFilePath: `${mainFilePath}`,
+                            childFilePath: `${childFilePath}`,
+                            keyName: 'ARRAY_OF_STRINGS_KEY',
+                        },
+                        {
+                            type: 'invalid_key_ordering',
+                            mainKeyPath: 'GENERAL_SETTINGS.FIRST_OUT_OF_ORDER_KEY',
+                            childKeyPath: 'GENERAL_SETTINGS',
+                            mainFilePath: `${mainFilePath}`,
+                            childFilePath: `${childFilePath}`,
+                            keyName: 'FIRST_OUT_OF_ORDER_KEY',
+                        },
+                        {
+                            type: 'key_not_found',
+                            mainKeyPath: 'GENERAL_SETTINGS.NOT_FOUND_SUB_KEYS.KEY_NOT_FOUND',
+                            childKeyPath: 'GENERAL_SETTINGS.NOT_FOUND_SUB_KEYS',
+                            mainFilePath: `${mainFilePath}`,
+                            childFilePath: `${childFilePath}`,
+                            keyName: 'KEY_NOT_FOUND',
+                        },
+                        {
+                            type: 'invalid_key_ordering',
+                            mainKeyPath: 'GENERAL_SETTINGS.NOT_FOUND_SUB_KEYS',
+                            childKeyPath: 'GENERAL_SETTINGS',
+                            mainFilePath: `${mainFilePath}`,
+                            childFilePath: `${childFilePath}`,
+                            keyName: 'NOT_FOUND_SUB_KEYS',
+                        },
+                        {
+                            type: 'key_not_found',
+                            mainKeyPath: 'GENERAL_SETTINGS.NOT_FOUND_TOP_KEY',
+                            childKeyPath: 'GENERAL_SETTINGS',
+                            mainFilePath: `${mainFilePath}`,
+                            childFilePath: `${childFilePath}`,
+                            keyName: 'NOT_FOUND_TOP_KEY',
+                        },
+                        {
+                            type: 'different_collection_types',
+                            mainKeyPath: 'GENERAL_SETTINGS.WRONG_TYPE_OBJECT_ARRAY',
+                            childKeyPath: 'GENERAL_SETTINGS.WRONG_TYPE_OBJECT_ARRAY',
+                            mainFilePath: `${mainFilePath}`,
+                            childFilePath: `${childFilePath}`,
+                        },
+                        {
+                            type: 'empty_value',
+                            mainKeyPath: 'GENERAL_SETTINGS.WRONG_TYPE_OBJECT_NULL',
+                            childKeyPath: 'GENERAL_SETTINGS.WRONG_TYPE_OBJECT_NULL',
+                            mainFilePath: `${mainFilePath}`,
+                            childFilePath: `${childFilePath}`,
+                            keyName: 'GENERAL_SETTINGS.WRONG_TYPE_OBJECT_NULL',
+                        },
+                        {
+                            type: 'different_collection_types',
+                            mainKeyPath: 'GENERAL_SETTINGS.WRONG_TYPE_OBJECT_STRING',
+                            childKeyPath: 'GENERAL_SETTINGS.WRONG_TYPE_OBJECT_STRING',
+                            mainFilePath: `${mainFilePath}`,
+                            childFilePath: `${childFilePath}`,
+                        },
+                    ]
+
+                    const expectedWarnings = [
+                        {
+                            type: 'same_value_types',
+                            mainKeyPath: 'GENERAL_SETTINGS.SAME_VALUE_KEY',
+                            childKeyPath: 'GENERAL_SETTINGS.SAME_VALUE_KEY',
+                            mainFilePath: `${mainFilePath}`,
+                            childFilePath: `${childFilePath}`,
+                            keyName: 'SAME_VALUE_KEY',
+                        },
+                    ]
+
+                    expect(result.errors).toStrictEqual(expectedErrors)
+                    expect(result.warnings).toStrictEqual(expectedWarnings)
                 })
             })
         })

@@ -79,7 +79,6 @@ export class ScanningService {
                         false
                     )((fileName, childObj) => {
                         const childFilePath = `${currentDirectoryPath}/${fileName}`
-                        console.log(childFilePath)
                         if (mainObj[fileName] !== undefined) {
                             const mainFilePath = `${config.rootDirectoryPath}/${config.mainDirectoryName}/${fileName}`
                             this.compareObjects({
@@ -267,12 +266,13 @@ export class ScanningService {
                     })
                     shouldReportAlphabeticalOrderErrors = false
                 } else if (childObject[mainObjectKey] !== undefined) {
+                    const finalChildKeyPath = this.getKeyPathFromKeyAndPath(mainObjectKey, childKeyPath)
                     this.scanValue({
                         mainValueParentKey: mainObjectKey,
                         mainValue: mainObject[mainObjectKey],
                         childValue: childObject[mainObjectKey],
                         mainKeyPath: finalMainKeyPath,
-                        childKeyPath: this.getKeyPathFromKeyAndPath(mainObjectKey, childKeyPath),
+                        childKeyPath: finalChildKeyPath,
                         mainFilePath,
                         childFilePath,
                     })

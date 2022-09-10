@@ -4,3 +4,4 @@ node_modules/
 *tgz
 *.d.ts
 test/test-directories/tmp/
+test/tmp
