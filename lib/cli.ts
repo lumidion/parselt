@@ -43,7 +43,7 @@ const init = () => {
             'Format translation files so that keys are in alphabetical order',
             (yargs) => {
                 return yargs
-                    .option('remove-extra', {
+                    .option('remove-extras', {
                         describe: 'File name for the file that should be added',
                         type: 'string',
                         requiresArg: true,

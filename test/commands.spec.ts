@@ -232,7 +232,7 @@ describe('Commands', () => {
                         fileType: FileTypes.YAML,
                         indentation: 2,
                     },
-                    true
+                    'formatting-apostrophe-with-template-string'
                 )
 
                 expect(testYaml.trim()).toBe(
