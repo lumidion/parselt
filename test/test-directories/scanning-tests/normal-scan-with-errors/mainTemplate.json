@@ -1,0 +1,39 @@
+{
+    "GENERAL_SETTINGS": {
+        "ARRAY_OF_NULL_KEY": [null, null, null],
+        "ARRAY_OF_OBJECTS_KEY": [{ "this": "array" }, { "only": "contains" }, { "object": "keys" }],
+        "ARRAY_OF_STRINGS_KEY": ["this", "is", "an", "array", "of", "strings"],
+        "FIRST_OUT_OF_ORDER_KEY": "this is out of order",
+        "NOT_FOUND_SUB_KEYS": {
+            "KEY_FOUND": "this key will be found",
+            "KEY_NOT_FOUND": "this key will not be found"
+        },
+        "NOT_FOUND_TOP_KEY": "this key won't be found",
+        "SAME_VALUE_KEY": "value is the same across translations",
+        "SECOND_OUT_OF_ORDER_KEY": "this is also out of order",
+        "WRONG_TYPE_STRING_ARRAY": "this will be an array in other translations",
+        "WRONG_TYPE_STRING_NULL": "this will be null in other translations",
+        "WRONG_TYPE_STRING_OBJECT": "this will be an object in other translations",
+        "WRONG_TYPE_OBJECT_ARRAY": {
+            "THIS": "key",
+            "WILL": "be",
+            "A": "different",
+            "TYPE": "in",
+            "OTHER": "translations"
+        },
+        "WRONG_TYPE_OBJECT_NULL": {
+            "THIS": "key",
+            "WILL": "be",
+            "A": "different",
+            "TYPE": "in",
+            "OTHER": "translations"
+        },
+        "WRONG_TYPE_OBJECT_STRING": {
+            "THIS": "key",
+            "WILL": "be",
+            "A": "different",
+            "TYPE": "in",
+            "OTHER": "translations"
+        }
+    }
+}

@@ -1,0 +1,30 @@
+{
+    "GENERAL_SETTINGS": {
+        "FIRST_OUT_OF_ORDER_KEY": "this is out of order french",
+        "ARRAY_OF_NULL_KEY": [null, null, null],
+        "ARRAY_OF_OBJECTS_KEY": [
+            { "this": "array french" },
+            { "only": "contains french" },
+            { "object": "keys french" }
+        ],
+        "ARRAY_OF_STRINGS_KEY": [
+            "this french",
+            "is french",
+            "an french",
+            "array french",
+            "of french",
+            "strings french"
+        ],
+        "SECOND_OUT_OF_ORDER_KEY": "this is also out of order french",
+        "NOT_FOUND_SUB_KEYS": {
+            "KEY_FOUND": "this key will be found french"
+        },
+        "SAME_VALUE_KEY": "value is the same across translations",
+        "WRONG_TYPE_STRING_ARRAY": ["french", "array"],
+        "WRONG_TYPE_STRING_NULL": null,
+        "WRONG_TYPE_STRING_OBJECT": { "french": "object" },
+        "WRONG_TYPE_OBJECT_ARRAY": ["french", "array"],
+        "WRONG_TYPE_OBJECT_NULL": null,
+        "WRONG_TYPE_OBJECT_STRING": "french string that should be an object"
+    }
+}

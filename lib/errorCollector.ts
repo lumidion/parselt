@@ -14,10 +14,11 @@ export enum ScanningErrorTypes {
     EMPTY_VALUE = 'empty_value',
     KEY_NOT_FOUND = 'key_not_found',
     INVALID_KEY_ORDERING = 'invalid_key_ordering',
-    COULD_NOT_LOAD_FILE = 'could_not_load_file',
+    COULD_NOT_LOAD_PATH = 'could_not_load_path',
+    EXTRA_FILE_FOUND = 'extra_file_found',
 }
 
-interface IGreaterNumberOfKeysError extends IKeyScanningError {
+export interface IGreaterNumberOfKeysError extends IKeyScanningError {
     type: ScanningErrorTypes.GREATER_NUMBER_OF_CHILD_KEYS
     keyNames: string[]
 }
@@ -35,10 +36,16 @@ interface IStandardKeyScanningError extends IKeyScanningError {
     keyName: string
 }
 
+export enum PathTypes {
+    FILE = 'file',
+    DIRECTORY = 'directory',
+}
+
 interface IFileError {
-    type: ScanningErrorTypes.COULD_NOT_LOAD_FILE
-    filePath: string
-    msg: string
+    type: ScanningErrorTypes.COULD_NOT_LOAD_PATH | ScanningErrorTypes.EXTRA_FILE_FOUND
+    path: string
+    pathType: PathTypes
+    msg?: string
 }
 
 export type IScanningError =
@@ -78,8 +85,10 @@ export class ScanningErrorsCollector {
         if (shouldOnlyPrintSummary) {
             this.printSummary()
         } else {
-            this.printMessageForCollection(logWarning, this.warnings, 'warnings') //stuck at plural default
-            this.printMessageForCollection(logError, this.errors, 'errors') //stuck at plural default
+            const warningsMessage = this.warnings.length === 1 ? 'warning' : 'warnings'
+            const errorsMessage = this.errors.length === 1 ? 'error' : 'errors'
+            this.printMessageForCollection(logWarning, this.warnings, warningsMessage)
+            this.printMessageForCollection(logError, this.errors, errorsMessage)
             console.log('\n')
             this.printSummary()
         }
@@ -91,6 +100,17 @@ export class ScanningErrorsCollector {
             logError(`${this.errors.length} errors found in project`)
         } else {
             logSuccess('Success! No errors found')
+        }
+    }
+
+    private isErrorFileType(error: IScanningError): error is IFileError {
+        if (
+            error.type !== ScanningErrorTypes.COULD_NOT_LOAD_PATH &&
+            error.type !== ScanningErrorTypes.EXTRA_FILE_FOUND
+        ) {
+            return true
+        } else {
+            return false
         }
     }
 
@@ -107,7 +127,7 @@ export class ScanningErrorsCollector {
             console.log('\n')
         }
         collection.forEach((error) => {
-            if (error.type !== ScanningErrorTypes.COULD_NOT_LOAD_FILE) {
+            if (!this.isErrorFileType(error)) {
                 if (currentFilePath !== error.childFilePath) {
                     wrapWithSpacing(() => {
                         logger('Main File Name:')
@@ -150,8 +170,13 @@ export class ScanningErrorsCollector {
                 const keyPathStr = error.childKeyPath ? `key path, ${error.childKeyPath}` : ''
                 return `Key, ${error.keyName}, was found out of alphabetical order in ${keyPathStr} in file, ${error.childFilePath}.`
             }
-            case ScanningErrorTypes.COULD_NOT_LOAD_FILE: {
-                return `Could not load file for ${error.filePath}. Cause: ${error.msg}.`
+            case ScanningErrorTypes.COULD_NOT_LOAD_PATH: {
+                return `Could not load ${error.pathType} for ${error.path}. Cause: ${
+                    error.msg ? error.msg : 'File not found'
+                }`
+            }
+            case ScanningErrorTypes.EXTRA_FILE_FOUND: {
+                return `Found an unexpected file at: ${error.path}. No corresponding file found in the main language directory. Please either delete this file or create the corresponding file in the main language directory.`
             }
             case ScanningErrorTypes.SAME_VALUE_TYPES: {
                 return `Key path, ${error.childKeyPath}, in file, ${error.childFilePath}, contained the same value as ${error.mainKeyPath}, in ${error.mainFilePath}`

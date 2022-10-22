@@ -1,0 +1,1 @@
+single_quote_sample: "%{insertVariable} isn't something that can be parsed with single quotes"
