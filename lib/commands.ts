@@ -131,8 +131,8 @@ export const scan = (config: ScanConfig): IScanResult => {
     }
 }
 
-export const addTranslationFile = (config: AddTranslationFileConfig) => {
-    const errorCollector = new ScanningErrorsCollector()
-    const fileService = new FileService(errorCollector)
-    fileService.createFileFromTemplate(config)
-}
+// export const addTranslationFile = (config: AddTranslationFileConfig) => {
+//     const errorCollector = new ScanningErrorsCollector()
+//     const fileService = new FileService(errorCollector)
+//     fileService.createFileFromTemplate(config)
+// }
