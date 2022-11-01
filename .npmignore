@@ -7,4 +7,4 @@
 prettier.config.js
 tsconfig.json
 test/
-.github
+.github/
