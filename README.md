@@ -26,10 +26,9 @@ Create a `parselt.json` file at the root of your project with the following prop
 }
 ```
 
-```json5
-
 Now add your first instance with basic properties to the "instances" array:
 
+```json5
 {
         "name": "string", // e.g. "main". Must be unique per instance
         "rootDirectoryPath": "string", //e.g. "./src/i18n",
@@ -46,7 +45,7 @@ If your translation files are in a single directory (e.g. with `en.json`, `fr.js
 {
     isMultiDirectory: false,
     mainFileName: 'string', //e.g. "en.json"
-    filePrefix: 'string | null', //use if you are loading different types of files by prefix in the directory (e.g. you have an en.json and fr.json, as well as an auth.en.json and an auth.fr.json)
+    filePrefix: 'string | undefined', //use if you are loading different types of files by prefix in the directory (e.g. you have an en.json and fr.json, as well as an auth.en.json and an auth.fr.json)
 }
 ```
 
