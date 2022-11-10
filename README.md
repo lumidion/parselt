@@ -20,42 +20,41 @@ Parselt will work for applications of all sizes, but medium-to-large application
 
 Create a `parselt.json` file at the root of your project with the following property:
 
-```json
+```json5
 {
-    "instances": []
+    instances: [],
 }
 ```
 
-```json
-
 Now add your first instance with basic properties to the "instances" array:
 
+```json5
 {
-        "name": string, // e.g. "main". Must be unique per instance
-        "rootDirectoryPath": string, //e.g. "./src/i18n",
-        "shouldCheckFirstKey": boolean, // default: true. Set to false if the first key in the file is not something that is referenced (e.g. your structure is something like, {"EN": {"SETTINGS_TITLE": "Settings"}}, but you only reference the "SETTINGS" key, instead of the full path, "EN.SETTINGS").
-        "shouldPrintResultSummaryOnly": boolean, // default: false
-        "fileType": "json" | "yaml",
+        "name": "string", // e.g. "main". Must be unique per instance
+        "rootDirectoryPath": "string", //e.g. "./src/i18n",
+        "shouldCheckFirstKey": "boolean", // default: true. Set to false if the first key in the file is not something that is referenced (e.g. your structure is something like, {"EN": {"SETTINGS_TITLE": "Settings"}}, but you only reference the "SETTINGS" key, instead of the full path, "EN.SETTINGS").
+        "shouldPrintResultSummaryOnly": "boolean", // default: false
+        "fileType": "json | yaml",
         "indentation": 2 | 4,
 }
 ```
 
 If your translation files are in a single directory (e.g. with `en.json`, `fr.json`, etc.), then add the following properties to your instance:
 
-```json
+```json5
 {
-        "isMultiDirectory": false,
-        "mainFileName": string, //e.g. "en.json"
-        "filePrefix": string | null, //use if you are loading different types of files by prefix in the directory (e.g. you have an en.json and fr.json, as well as an auth.en.json and an auth.fr.json)
+    isMultiDirectory: false,
+    mainFileName: 'string', //e.g. "en.json"
+    filePrefix: 'string | undefined', //use if you are loading different types of files by prefix in the directory (e.g. you have an en.json and fr.json, as well as an auth.en.json and an auth.fr.json)
 }
 ```
 
 If your translation files are in multiple directories (e.g. with `en/settings.json`, `fr/settings.json`, etc.), then add the following properties to your instance:
 
-```json
+```json5
 {
-        "isMultiDirectory": true,
-        "mainDirectoryName": string, //e.g. "en"
+    isMultiDirectory: true,
+    mainDirectoryName: 'boolean', //e.g. "en"
 }
 ```
 

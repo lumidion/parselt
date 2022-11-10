@@ -1,7 +1,9 @@
 {
-    "name": "parselt",
+    "name": "@lumidion/parselt",
     "version": "1.0.0-RC1",
-    "bin": "./bin/index.js",
+    "bin": {
+        "parselt": "./bin/index.js"
+    },
     "preferGlobal": true,
     "description": "This package checks and loads updates for translation files.",
     "main": "./lib/commands.js",
@@ -16,7 +18,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/Andrapyre/parselt.git"
+        "url": "git+https://github.com/lumidion/parselt.git"
     },
     "keywords": [
         "international",
@@ -26,9 +28,9 @@
     "author": "David Doyle",
     "license": "ISC",
     "bugs": {
-        "url": "https://github.com/Andrapyre/parselt/issues"
+        "url": "https://github.com/lumidion/parselt/issues"
     },
-    "homepage": "https://github.com/Andrapyre/parselt#readme",
+    "homepage": "https://github.com/lumidion/parselt#readme",
     "dependencies": {
         "ajv": "^8.11.0",
         "js-yaml": "^4.1.0",
