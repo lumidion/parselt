@@ -1,7 +1,9 @@
 {
-    "name": "parselt",
+    "name": "@lumidion/parselt",
     "version": "1.0.0-RC1",
-    "bin": "./bin/index.js",
+    "bin": {
+        "parselt": "./bin/index.js"
+    },
     "preferGlobal": true,
     "description": "This package checks and loads updates for translation files.",
     "main": "./lib/commands.js",
