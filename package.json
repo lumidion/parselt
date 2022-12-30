@@ -1,6 +1,6 @@
 {
     "name": "@lumidion/parselt",
-    "version": "1.0.0-RC1",
+    "version": "1.0.0-RC2",
     "bin": {
         "parselt": "./bin/index.js"
     },
@@ -9,7 +9,7 @@
     "main": "./lib/commands.js",
     "engines": {
         "npm": ">=7.0.0",
-        "node": ">=16.0.0"
+        "node": ">=14.0.0"
     },
     "scripts": {
         "build": "tsc",
