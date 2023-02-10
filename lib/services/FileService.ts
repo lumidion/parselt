@@ -17,6 +17,7 @@ export class FileService {
 
     getSerializedFileMetadataFromDir(directoryPath: string): FileMetadata[] {
         const files = this.loadAllFromDirectory(directoryPath)
+        console.log(files)
         let items: FileMetadata[] = []
         files.forEach((file) => {
             if (file.isDirectory() && !file.name.match(/^\./) && !file.name.match('node_modules')) {
@@ -24,6 +25,7 @@ export class FileService {
                 items = items.concat(subItems)
             } else {
                 const fileType = FileService.getSerializedFileType(file.name)
+                console.log(file.name)
                 if (fileType !== undefined) {
                     items.push({ name: file.name, parentPath: directoryPath, fileType })
                 }
@@ -94,6 +96,8 @@ export class FileService {
     loadAllFromDirectory(directoryPath: string): Dirent[] {
         try {
             const dirents = fs.readdirSync(directoryPath, { withFileTypes: true })
+            console.log('dirents')
+            console.log(dirents)
             if (dirents.length === 0 && this.errorCollector) {
                 this.errorCollector.addError({
                     type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
@@ -104,6 +108,7 @@ export class FileService {
             }
             return dirents
         } catch (error) {
+            console.log(error)
             if (this.errorCollector) {
                 this.errorCollector.addError({
                     type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
