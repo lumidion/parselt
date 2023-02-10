@@ -1,7 +1,13 @@
 import fs, { Dirent } from 'fs'
 import jsYaml from 'js-yaml'
-import { AddTranslationFileConfig, FileTypes, Indentation } from '../config/config'
-import { PathTypes, ScanningErrorsCollector, ScanningErrorTypes } from '../errorCollector'
+import { AddTranslationFileConfig, FileTypes, Indentation } from '../config/config.js'
+import { PathTypes, ScanningErrorsCollector, ScanningErrorTypes } from '../errorCollector.js'
+
+export interface FileMetadata {
+    name: string
+    parentPath: string
+    fileType: FileTypes
+}
 
 export class FileService {
     private readonly errorCollector: ScanningErrorsCollector | undefined
@@ -9,18 +15,35 @@ export class FileService {
         this.errorCollector = errorCollector
     }
 
-    getFileAsObject(filePath: string): object | undefined {
-        const fileType = FileService.getFileTypeForFile(filePath)
+    getSerializedFileMetadataFromDir(directoryPath: string): FileMetadata[] {
+        const files = this.loadAllFromDirectory(directoryPath)
+        let items: FileMetadata[] = []
+        files.forEach((file) => {
+            if (file.isDirectory() && !file.name.match(/^\./) && !file.name.match('node_modules')) {
+                const subItems = this.getSerializedFileMetadataFromDir(`${directoryPath}/${file.name}`)
+                items = items.concat(subItems)
+            } else {
+                const fileType = FileService.getSerializedFileType(file.name)
+                if (fileType !== undefined) {
+                    items.push({ name: file.name, parentPath: directoryPath, fileType })
+                }
+            }
+        })
+        return items
+    }
+
+    getSerializedFileAsObject(filePath: string): object | undefined {
+        const fileType = FileService.getSerializedFileType(filePath)
         if (fileType !== undefined) {
             try {
                 const file = fs.readFileSync(filePath, 'utf8')
 
                 if (fileType === FileTypes.YAML) {
                     const loadedObject = jsYaml.load(file)
-                    return this.parseFileIntoObject(loadedObject, filePath)
+                    return this.parseRawLoadedFileIntoObject(loadedObject, filePath)
                 } else if (fileType === FileTypes.JSON) {
                     const loadedObject = JSON.parse(file)
-                    return this.parseFileIntoObject(loadedObject, filePath)
+                    return this.parseRawLoadedFileIntoObject(loadedObject, filePath)
                 }
             } catch (error) {
                 if (this.errorCollector) {
@@ -47,7 +70,7 @@ export class FileService {
         ) =>
         (func: (fileName: string, obj: object) => A): A[] => {
             const files = this.loadAllFromDirectory(directoryPath)
-            const items: A[] = []
+            let items: A[] = []
             files.forEach((file) => {
                 if (file.isDirectory() && shouldIncludeSubDirectories) {
                     const subItems = this.mapFileObjectsInDirectory<A>(
@@ -55,9 +78,9 @@ export class FileService {
                         fileType,
                         true
                     )(func)
-                    items.concat(subItems)
+                    items = items.concat(subItems)
                 } else if (FileService.shouldFileBeScanned(file, fileType, expectedFilePrefix)) {
-                    const obj = this.getFileAsObject(`${directoryPath}/${file.name}`)
+                    const obj = this.getSerializedFileAsObject(`${directoryPath}/${file.name}`)
                     if (obj !== undefined) {
                         const item = func(file.name, obj)
                         items.push(item)
@@ -93,7 +116,68 @@ export class FileService {
         }
     }
 
-    private parseFileIntoObject = (obj: unknown, filePath: string): object | undefined => {
+    getFirstSerializedFilePathFromDir(directoryPath: string, shouldIncludeSubDirectories: boolean): string | undefined {
+        const dirents = this.loadAllFromDirectory(directoryPath)
+        let filePath: string | undefined = undefined
+
+        for (let i = 0; i < dirents.length; i++) {
+            const currentDirent = dirents[i]
+            if (currentDirent.isDirectory() && shouldIncludeSubDirectories) {
+                const subFilePath = this.getFirstSerializedFilePathFromDir(
+                    `${directoryPath}/${currentDirent.name}`,
+                    true
+                )
+                if (subFilePath) {
+                    filePath = subFilePath
+                    break
+                }
+            } else if (currentDirent.isFile()) {
+                const currentDirentPath = `${directoryPath}/${currentDirent.name}`
+                const fileType = FileService.getSerializedFileType(currentDirentPath)
+                if (fileType !== undefined) {
+                    filePath = currentDirentPath
+                    break
+                }
+            }
+        }
+
+        return filePath
+    }
+
+    getIndentationFromSerializedFile(filePath: string): Indentation {
+        const DEFAULT_INDENTATION = 2
+        const fileType = FileService.getSerializedFileType(filePath)
+
+        if (fileType === undefined) {
+            return DEFAULT_INDENTATION
+        }
+
+        try {
+            const file = fs.readFileSync(filePath, 'utf-8')
+            const lines = file.split('\n')
+
+            if (lines.length <= 1) {
+                return DEFAULT_INDENTATION
+            } else {
+                let initialWhitespaceCounter = 0
+                for (let i = 0; i < lines[1].length; i++) {
+                    const currentChar = lines[1][i]
+                    if (currentChar === ' ') {
+                        initialWhitespaceCounter++
+                    } else {
+                        break
+                    }
+                }
+                return initialWhitespaceCounter === 2 || initialWhitespaceCounter === 4
+                    ? initialWhitespaceCounter
+                    : DEFAULT_INDENTATION
+            }
+        } catch (err) {
+            return DEFAULT_INDENTATION
+        }
+    }
+
+    private parseRawLoadedFileIntoObject = (obj: unknown, filePath: string): object | undefined => {
         if (typeof obj === 'object' && obj !== null) {
             return obj
         } else if (this.errorCollector) {
@@ -107,7 +191,7 @@ export class FileService {
     }
 
     writeObjectToFile(obj: any, path: string, indentation: Indentation) {
-        const fileType = FileService.getFileTypeForFile(path)
+        const fileType = FileService.getSerializedFileType(path)
         if (fileType === FileTypes.JSON) {
             const json = JSON.stringify(obj, undefined, indentation)
             fs.writeFileSync(path, json)
@@ -117,7 +201,7 @@ export class FileService {
         }
     }
 
-    static getFileTypeForFile = (fileNameOrPath: string): FileTypes | undefined => {
+    static getSerializedFileType = (fileNameOrPath: string): FileTypes | undefined => {
         if (fileNameOrPath.includes('.json')) {
             return FileTypes.JSON
         } else if (fileNameOrPath.includes('.yml') || fileNameOrPath.includes('.yaml')) {
@@ -134,7 +218,7 @@ export class FileService {
     }
 
     private static isFileTypeCorrect(fileName: string, expectedFileType: FileTypes): boolean {
-        const fileTypeOption = this.getFileTypeForFile(fileName)
+        const fileTypeOption = this.getSerializedFileType(fileName)
         if (fileTypeOption !== undefined && fileTypeOption === expectedFileType) {
             return true
         } else {
@@ -194,7 +278,7 @@ export class FileService {
     }
 
     createFileFromTemplate(config: AddTranslationFileConfig) {
-        const mainObj = this.getFileAsObject(
+        const mainObj = this.getSerializedFileAsObject(
             `${config.instance.rootDirectoryPath}/${config.instance.mainDirectoryName}/${config.fileName}`
         )
 

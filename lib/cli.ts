@@ -1,15 +1,40 @@
 import yargs, { Arguments } from 'yargs'
 import { hideBin } from 'yargs/helpers'
-import * as packageJson from '../package.json'
-import { format, scan } from './commands'
-import { ConfigLoader } from './config/ConfigLoader'
+import path from 'path'
+import process from 'process'
+import fs from 'fs'
+import * as url from 'url'
+
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
+const packageJson = fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')
+
+const { version } = JSON.parse(packageJson)
+
+import { format, init, scan } from './commands.js'
+import { ConfigLoader } from './config/ConfigLoader.js'
+import { logError } from './logger.js'
 
 const configLoader = new ConfigLoader()
 
-const init = () => {
+const wrapPromiseWithErrorHandling = <A>(func: () => Promise<A>) => {
+    func().catch((err) => {
+        if (typeof err === 'string') {
+            logError(`\n${err}`)
+        } else if (typeof err?.message === 'string') {
+            logError(`\n${err.message}`)
+        } else {
+            console.log(err)
+            logError(
+                '\nAn uncaught error caused this application to fail. Please feel free to create an issue with the parselt team describing the exact problem and context here: https://github.com/lumidion/parselt/issues'
+            )
+        }
+    })
+}
+
+const initCli = () => {
     yargs(hideBin(process.argv))
         .usage('Usage: $0 <command> --instance-name')
-        .version(packageJson.version)
+        .version(version)
         // .command('add', 'Add translations', (yargs: any) => { //TODO re-add when testing is complete and this is stable.
         //     return yargs.command(
         //         'file',
@@ -38,6 +63,16 @@ const init = () => {
         //         }
         //     )
         // })
+        .command(
+            'init',
+            'Init setup of parselt in the project. Outputs a parselt.json file at the root of the project',
+            {},
+            async () => {
+                wrapPromiseWithErrorHandling(async () => {
+                    await init()
+                })
+            }
+        )
         .command(
             'format',
             'Format translation files so that keys are in alphabetical order',
@@ -76,4 +111,4 @@ const init = () => {
         .help().argv
 }
 
-init()
+initCli()

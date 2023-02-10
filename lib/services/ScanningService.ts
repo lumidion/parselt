@@ -1,6 +1,6 @@
-import { MultiDirectoryInstanceConfig, SingleDirectoryInstanceConfig } from '../config/config'
-import { IScanningError, PathTypes, ScanningErrorsCollector, ScanningErrorTypes } from '../errorCollector'
-import { FileService } from './FileService'
+import { MultiDirectoryInstanceConfig, SingleDirectoryInstanceConfig } from '../config/config.js'
+import { IScanningError, PathTypes, ScanningErrorsCollector, ScanningErrorTypes } from '../errorCollector.js'
+import { FileService } from './FileService.js'
 
 export interface IScanResult {
     errors: IScanningError[]
@@ -104,7 +104,7 @@ export class ScanningService {
     }
 
     compareFiles = (config: SingleDirectoryInstanceConfig): void => {
-        const mainObj = this.fileService.getFileAsObject(`${config.rootDirectoryPath}/${config.mainFileName}`)
+        const mainObj = this.fileService.getSerializedFileAsObject(`${config.rootDirectoryPath}/${config.mainFileName}`)
 
         if (mainObj !== undefined) {
             const mainFilePath = `${config.rootDirectoryPath}/${config.mainFileName}`

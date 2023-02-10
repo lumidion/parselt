@@ -1,0 +1,12 @@
+{
+    "env": {
+        "es2021": true
+    },
+    "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "plugin:prettier/recommended"],
+    "parser": "@typescript-eslint/parser",
+    "plugins": ["@typescript-eslint", "prettier", "unused-imports"],
+    "rules": {
+        "prettier/prettier": 2,
+        "unused-imports/no-unused-imports": "error"
+    }
+}

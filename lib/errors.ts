@@ -1,5 +1,5 @@
-import { ScanningErrorsCollector } from './errorCollector'
-import { logError, logSuccess } from './logger'
+import { ScanningErrorsCollector } from './errorCollector.js'
+import { logError, logSuccess } from './logger.js'
 
 export const handleScanningErrors = (
     errorCollector: ScanningErrorsCollector,

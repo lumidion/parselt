@@ -1,4 +1,4 @@
-import { logError, logSuccess, logWarning } from './logger'
+import { logError, logSuccess, logWarning } from './logger.js'
 
 interface IKeyScanningError {
     mainFilePath: string
@@ -157,7 +157,7 @@ export class ScanningErrorsCollector {
                 const keysString = `Keys affected: ${error.keyNames.toString()}.`
                 return error.childKeyPath
                     ? `Key path, ${error.childKeyPath}, in file, ${error.childFilePath}, has more sub-keys than key path, ${error.mainKeyPath}, in file, ${error.mainFilePath}. ${keysString}`
-                    : `File, ${error.childFilePath} has more top-level keys than file, ${error.mainFilePath}. ${keysString}`
+                    : `File, ${error.childFilePath} has more top-level keys than file, ${error.mainFilePath} - ${keysString}`
             }
             case ScanningErrorTypes.KEY_NOT_FOUND: {
                 const keyPathStr = error.childKeyPath ? `in key path, ${error.childKeyPath},` : ''

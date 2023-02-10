@@ -1,5 +1,5 @@
-import { Indentation, MultiDirectoryInstanceConfig, SingleDirectoryInstanceConfig } from '../config/config'
-import { FileService } from './FileService'
+import { Indentation, MultiDirectoryInstanceConfig, SingleDirectoryInstanceConfig } from '../config/config.js'
+import { FileService } from './FileService.js'
 
 export class FormattingService {
     private readonly fileService: FileService
@@ -22,7 +22,7 @@ export class FormattingService {
     }
 
     private styleFile = (filePath: string, indentation: Indentation) => {
-        const parsedFile = this.fileService.getFileAsObject(filePath)
+        const parsedFile = this.fileService.getSerializedFileAsObject(filePath)
         const sortedObj = this.sortObjectKeysAlphabetically(parsedFile)
         this.fileService.writeObjectToFile(sortedObj, filePath, indentation)
     }

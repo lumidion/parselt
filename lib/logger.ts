@@ -1,6 +1,27 @@
 import { Console } from 'console'
 import { Transform } from 'stream'
 
+//TODO: synchronous calls are preventing this from working. Migrate project to use promises throughout instead of blocking calls to the file system.
+class LoadingCircle {
+    private timer: NodeJS.Timer | undefined = undefined
+    private readonly state: string[] = ['\\', '|', '/', '-']
+    private index = 0
+    start() {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const self = this
+        this.timer = setInterval(function () {
+            process.stdout.write('\r' + self.state[self.index++])
+            self.index &= 3
+        }, 200)
+    }
+
+    stop() {
+        clearInterval(this.timer)
+    }
+}
+
+export const loadingCircle = new LoadingCircle()
+
 export const logSuccess = (msg: string) => {
     console.log(`\x1b[32m${msg}\x1b[1m`)
 }

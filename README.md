@@ -16,7 +16,15 @@ Parselt will work for applications of all sizes, but medium-to-large application
 
 # Getting Started
 
-## Set up a config file
+## Auto setup
+
+Simply run the following command and parselt will automatically set up configuration based on your current project setup. If there are any problems, proceed to the manual setup in the next step.
+
+```
+npx parselt init
+```
+
+## Manual Setup
 
 Create a `parselt.json` file at the root of your project with the following property:
 
@@ -54,7 +62,7 @@ If your translation files are in multiple directories (e.g. with `en/settings.js
 ```json5
 {
     isMultiDirectory: true,
-    mainDirectoryName: 'boolean', //e.g. "en"
+    mainDirectoryName: 'string', //e.g. "en"
 }
 ```
 

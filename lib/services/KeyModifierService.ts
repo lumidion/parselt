@@ -1,7 +1,7 @@
-import { Indentation } from '../config/config'
-import { IGreaterNumberOfKeysError } from '../errorCollector'
+import { Indentation } from '../config/config.js'
+import { IGreaterNumberOfKeysError } from '../errorCollector.js'
 import * as lodash from 'lodash'
-import { FileService } from './FileService'
+import { FileService } from './FileService.js'
 
 type SortedErrors = Record<string, IGreaterNumberOfKeysError[]>
 
@@ -87,9 +87,9 @@ export class KeyModifierService {
         filePath: string,
         indentation: Indentation
     ) {
-        const fileTypeOption = FileService.getFileTypeForFile(filePath)
+        const fileTypeOption = FileService.getSerializedFileType(filePath)
         if (fileTypeOption) {
-            const file = this.fileService.getFileAsObject(filePath)
+            const file = this.fileService.getSerializedFileAsObject(filePath)
             let newObject: any = lodash.cloneDeep(file)
             if (file) {
                 errors.forEach((error) => {

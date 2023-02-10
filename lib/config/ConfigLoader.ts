@@ -8,12 +8,15 @@ import {
     ParseltConfig,
     ScanConfig,
     SingleDirectoryInstanceConfig,
-} from './config'
+} from './config.js'
 
-import Ajv from 'ajv'
 import { JSONSchemaType } from 'ajv'
 
-const ajv = new Ajv()
+import _Ajv from 'ajv'
+
+const Ajv = _Ajv as unknown as typeof _Ajv.default // TODO: Investigate whether to remove all Ajv and replace with type guards. This current workaround is necessary to support ESM, as Ajv imports json modules in a way that isn't supported by ESM
+
+const ajv = new Ajv({ removeAdditional: true })
 
 const singleDirectorySchema: JSONSchemaType<SingleDirectoryInstanceConfig> = {
     type: 'object',
@@ -29,7 +32,7 @@ const singleDirectorySchema: JSONSchemaType<SingleDirectoryInstanceConfig> = {
         filePrefix: { type: 'string', nullable: true },
     },
     required: ['name', 'rootDirectoryPath', 'fileType', 'indentation', 'isMultiDirectory', 'mainFileName'],
-    additionalProperties: false,
+    additionalProperties: true,
 }
 
 const multiDirectorySchema: JSONSchemaType<MultiDirectoryInstanceConfig> = {
@@ -45,7 +48,7 @@ const multiDirectorySchema: JSONSchemaType<MultiDirectoryInstanceConfig> = {
         isMultiDirectory: { type: 'boolean' },
     },
     required: ['name', 'rootDirectoryPath', 'fileType', 'indentation', 'isMultiDirectory', 'mainDirectoryName'],
-    additionalProperties: false,
+    additionalProperties: true,
 }
 const singleDirectoryValidator = ajv.compile(singleDirectorySchema)
 const multiDirectoryValidator = ajv.compile(multiDirectorySchema)
@@ -93,10 +96,13 @@ export class ConfigLoader {
             } else {
                 throw new Error(`Could not load config. 'Instances' key had a malformed structure.`)
             }
-        } catch (error) {
-            throw new Error(
-                'Could not load config file in root directory. Please create config file (parselt.json) and try again'
-            )
+        } catch (error: any) {
+            if (error?.message) {
+                error.message = `Could not load config file in root directory. Please make sure that the config file (parselt.json) is properly created and try again. \n ${error.message}`
+                throw error
+            } else {
+                throw error
+            }
         }
     }
 
