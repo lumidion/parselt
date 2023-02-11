@@ -28,19 +28,71 @@ describe('FileService', () => {
         })
     })
 
-    describe("#getSerializedFileMetadataFromDir", () => {
+    describe('#getSerializedFileMetadataFromDir', () => {
         const testDirectory = `${fileServiceTestDir}/getFileMetadata`
         const fileService = new FileService()
 
-        it("should return metadata for json files", () => {
-            const result = fileService.getSerializedFileMetadataFromDir(`${testDirectory}/simpleJson`)
-            console.log(`${testDirectory}/simpleJson`)
-            const shortenedParentPath = result[0].parentPath.replace(process.cwd(), "")
+        it('should return metadata for json files', () => {
+            const path = `${testDirectory}/simpleJson`
+            const result = fileService.getSerializedFileMetadataFromDir(path)
 
             expect(result.length).toBe(1)
             expect(result[0].name).toBe('en.json')
             expect(result[0].fileType).toBe(FileTypes.JSON)
-            expect(shortenedParentPath).toBe("/test/test-directories/service-tests/file-service/getFileMetadata/simpleJson")
+            expect(result[0].parentPath).toBe(path)
+        })
+
+        it('should return metadata for both extensions of yaml files', () => {
+            const path = `${testDirectory}/simpleYaml`
+            const result = fileService.getSerializedFileMetadataFromDir(path)
+
+            expect(result.length).toBe(2)
+            expect(result[0].name).toBe('en.yaml')
+            expect(result[0].fileType).toBe(FileTypes.YAML)
+            expect(result[0].parentPath).toBe(path)
+
+            expect(result[1].name).toBe('fr.yml')
+            expect(result[1].fileType).toBe(FileTypes.YAML)
+            expect(result[1].parentPath).toBe(path)
+        })
+
+        it('should return metadata for all files in a multidir setup', () => {
+            const path = `${testDirectory}/multidirectory`
+            const result = fileService.getSerializedFileMetadataFromDir(path)
+
+            expect(result.length).toBe(2)
+            expect(result[0].name).toBe('customer.json')
+            expect(result[0].fileType).toBe(FileTypes.JSON)
+            expect(result[0].parentPath).toBe(`${path}/feedback`)
+
+            expect(result[1].name).toBe('general.json')
+            expect(result[1].fileType).toBe(FileTypes.JSON)
+            expect(result[1].parentPath).toBe(path)
+        })
+
+        it('should skip ignored folders', () => {
+            const path = `${testDirectory}/ignoredFolders`
+            const result = fileService.getSerializedFileMetadataFromDir(path)
+            expect(result.length).toBe(0)
+        })
+    })
+
+    describe('#getSerializedFileType', () => {
+        const testFileType = (path: string, expectedResult: FileTypes | undefined) => {
+            const result = FileService.getSerializedFileType(path)
+            expect(result).toBe(expectedResult)
+        }
+        it('should parse json file with json type', () => {
+            testFileType('en.json', FileTypes.JSON)
+        })
+        it('should parse yaml file with yaml type', () => {
+            testFileType('en.yaml', FileTypes.YAML)
+        })
+        it('should parse yml file with yaml type', () => {
+            testFileType('en.yml', FileTypes.YAML)
+        })
+        it('should parse non-serialized file with undefined', () => {
+            testFileType('index.js', undefined)
         })
     })
 })

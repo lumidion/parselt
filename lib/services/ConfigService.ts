@@ -225,8 +225,7 @@ export class ConfigService {
 
             if (instance.isMultiDirectory) {
                 const firstSerializedFilePath = this.fileService.getFirstSerializedFilePathFromDir(
-                    `${instance.instancePath}/${mainLanguageCode}`,
-                    true
+                    `${instance.instancePath}/${mainLanguageCode}`
                 )
                 const indentation = firstSerializedFilePath
                     ? this.fileService.getIndentationFromSerializedFile(firstSerializedFilePath)
@@ -250,7 +249,6 @@ export class ConfigService {
                     name: instanceName,
                     rootDirectoryPath: relativeInstancePath,
                     indentation,
-
                     fileType: instance.fileType,
                     isMultiDirectory: false,
                     mainFileName,

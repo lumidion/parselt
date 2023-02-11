@@ -58,11 +58,7 @@ export const format = (config: FormatConfig) => {
                     logTable(log)
                 }
 
-                const removedFileNames = fileService.deleteExcessFilesFromDirectories(
-                    instanceConfig.rootDirectoryPath,
-                    instanceConfig.mainDirectoryName,
-                    instanceConfig.fileType
-                )
+                const removedFileNames = fileService.deleteExcessFilesFromDirectories(instanceConfig)
 
                 if (removedFileNames.length > 0) {
                     const removedFileLog = removedFileNames.map((fileName) => {

@@ -31,7 +31,7 @@ export class FormattingService {
         const files = this.fileService.loadAllFromDirectory(config.rootDirectoryPath)
 
         files.forEach((file) => {
-            if (FileService.shouldFileBeScanned(file, config.fileType, config.filePrefix)) {
+            if (FileService.isFilePartOfInstance(file, config.fileType, config.filePrefix)) {
                 this.styleFile(`${config.rootDirectoryPath}/${file.name}`, config.indentation)
             }
         })
@@ -45,7 +45,7 @@ export class FormattingService {
                 const currentDirectoryPath = `${config.rootDirectoryPath}/${directory.name}`
                 const files = this.fileService.loadAllFromDirectory(currentDirectoryPath)
                 files.forEach((file) => {
-                    if (FileService.shouldFileBeScanned(file, config.fileType)) {
+                    if (FileService.isFilePartOfInstance(file, config.fileType)) {
                         this.styleFile(`${currentDirectoryPath}/${file.name}`, config.indentation)
                     }
                 })

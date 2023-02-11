@@ -1,6 +1,6 @@
 import fs, { Dirent } from 'fs'
 import jsYaml from 'js-yaml'
-import { AddTranslationFileConfig, FileTypes, Indentation } from '../config/config.js'
+import { AddTranslationFileConfig, FileTypes, Indentation, MultiDirectoryInstanceConfig } from '../config/config.js'
 import { PathTypes, ScanningErrorsCollector, ScanningErrorTypes } from '../errorCollector.js'
 
 export interface FileMetadata {
@@ -17,7 +17,6 @@ export class FileService {
 
     getSerializedFileMetadataFromDir(directoryPath: string): FileMetadata[] {
         const files = this.loadAllFromDirectory(directoryPath)
-        console.log(files)
         let items: FileMetadata[] = []
         files.forEach((file) => {
             if (file.isDirectory() && !file.name.match(/^\./) && !file.name.match('node_modules')) {
@@ -25,7 +24,6 @@ export class FileService {
                 items = items.concat(subItems)
             } else {
                 const fileType = FileService.getSerializedFileType(file.name)
-                console.log(file.name)
                 if (fileType !== undefined) {
                     items.push({ name: file.name, parentPath: directoryPath, fileType })
                 }
@@ -63,7 +61,7 @@ export class FileService {
         }
     }
 
-    mapFileObjectsInDirectory =
+    mapInstanceFilesToObjectsInDir =
         <A>(
             directoryPath: string,
             fileType: FileTypes,
@@ -75,13 +73,13 @@ export class FileService {
             let items: A[] = []
             files.forEach((file) => {
                 if (file.isDirectory() && shouldIncludeSubDirectories) {
-                    const subItems = this.mapFileObjectsInDirectory<A>(
+                    const subItems = this.mapInstanceFilesToObjectsInDir<A>(
                         `${directoryPath}/${file.name}`,
                         fileType,
                         true
                     )(func)
                     items = items.concat(subItems)
-                } else if (FileService.shouldFileBeScanned(file, fileType, expectedFilePrefix)) {
+                } else if (FileService.isFilePartOfInstance(file, fileType, expectedFilePrefix)) {
                     const obj = this.getSerializedFileAsObject(`${directoryPath}/${file.name}`)
                     if (obj !== undefined) {
                         const item = func(file.name, obj)
@@ -96,8 +94,6 @@ export class FileService {
     loadAllFromDirectory(directoryPath: string): Dirent[] {
         try {
             const dirents = fs.readdirSync(directoryPath, { withFileTypes: true })
-            console.log('dirents')
-            console.log(dirents)
             if (dirents.length === 0 && this.errorCollector) {
                 this.errorCollector.addError({
                     type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
@@ -108,7 +104,6 @@ export class FileService {
             }
             return dirents
         } catch (error) {
-            console.log(error)
             if (this.errorCollector) {
                 this.errorCollector.addError({
                     type: ScanningErrorTypes.COULD_NOT_LOAD_PATH,
@@ -116,22 +111,21 @@ export class FileService {
                     pathType: PathTypes.DIRECTORY,
                     msg: 'Could not load files from directory. Please make sure that the directory exists and try again.',
                 })
+            } else {
+                console.log(error)
             }
             return []
         }
     }
 
-    getFirstSerializedFilePathFromDir(directoryPath: string, shouldIncludeSubDirectories: boolean): string | undefined {
+    getFirstSerializedFilePathFromDir(directoryPath: string): string | undefined {
         const dirents = this.loadAllFromDirectory(directoryPath)
         let filePath: string | undefined = undefined
 
         for (let i = 0; i < dirents.length; i++) {
             const currentDirent = dirents[i]
-            if (currentDirent.isDirectory() && shouldIncludeSubDirectories) {
-                const subFilePath = this.getFirstSerializedFilePathFromDir(
-                    `${directoryPath}/${currentDirent.name}`,
-                    true
-                )
+            if (currentDirent.isDirectory()) {
+                const subFilePath = this.getFirstSerializedFilePathFromDir(`${directoryPath}/${currentDirent.name}`)
                 if (subFilePath) {
                     filePath = subFilePath
                     break
@@ -231,7 +225,7 @@ export class FileService {
         }
     }
 
-    static shouldFileBeScanned(file: Dirent, expectedFileType: FileTypes, expectedFilePrefix?: string) {
+    static isFilePartOfInstance(file: Dirent, expectedFileType: FileTypes, expectedFilePrefix?: string): boolean {
         return (
             file.isFile() &&
             this.isFileTypeCorrect(file.name, expectedFileType) &&
@@ -239,21 +233,15 @@ export class FileService {
         )
     }
 
-    deleteExcessFilesFromDirectories = (
-        rootDirectoryPath: string,
-        mainDirectoryName: string,
-        fileType: FileTypes,
-        expectedFilePrefix?: string
-    ): string[] => {
-        const dirs = this.loadAllFromDirectory(rootDirectoryPath)
+    deleteExcessFilesFromDirectories = (instance: MultiDirectoryInstanceConfig): string[] => {
+        const dirs = this.loadAllFromDirectory(instance.rootDirectoryPath)
 
         const mainFileNames: string[] = []
 
-        this.mapFileObjectsInDirectory(
-            `${rootDirectoryPath}/${mainDirectoryName}`,
-            fileType,
-            false,
-            expectedFilePrefix
+        this.mapInstanceFilesToObjectsInDir(
+            `${instance.rootDirectoryPath}/${instance.mainDirectoryName}`,
+            instance.fileType,
+            true
         )((fileName) => {
             mainFileNames.push(fileName)
         })
@@ -262,13 +250,12 @@ export class FileService {
 
         if (dirs !== undefined) {
             dirs.forEach((directory) => {
-                if (directory.isDirectory() && directory.name !== mainDirectoryName) {
-                    const currentDirectoryPath = `${rootDirectoryPath}/${directory.name}`
-                    this.mapFileObjectsInDirectory(
+                if (directory.isDirectory() && directory.name !== instance.mainDirectoryName) {
+                    const currentDirectoryPath = `${instance.rootDirectoryPath}/${directory.name}`
+                    this.mapInstanceFilesToObjectsInDir(
                         currentDirectoryPath,
-                        fileType,
-                        false,
-                        expectedFilePrefix
+                        instance.fileType,
+                        true
                     )((fileName) => {
                         if (!mainFileNames.includes(fileName)) {
                             const filePathToDelete = `${currentDirectoryPath}/${fileName}`

@@ -58,7 +58,7 @@ export class ScanningService {
 
         const mainObj: any = {}
 
-        this.fileService.mapFileObjectsInDirectory<string>(
+        this.fileService.mapInstanceFilesToObjectsInDir<string>(
             `${config.rootDirectoryPath}/${config.mainDirectoryName}`,
             config.fileType,
             false
@@ -73,7 +73,7 @@ export class ScanningService {
                     const currentDirectoryPath = `${config.rootDirectoryPath}/${directory.name}`
 
                     const correspondingScannedFiles: string[] = []
-                    this.fileService.mapFileObjectsInDirectory(
+                    this.fileService.mapInstanceFilesToObjectsInDir(
                         currentDirectoryPath,
                         config.fileType,
                         false
@@ -108,7 +108,7 @@ export class ScanningService {
 
         if (mainObj !== undefined) {
             const mainFilePath = `${config.rootDirectoryPath}/${config.mainFileName}`
-            this.fileService.mapFileObjectsInDirectory(
+            this.fileService.mapInstanceFilesToObjectsInDir(
                 config.rootDirectoryPath,
                 config.fileType,
                 false,
