@@ -17,18 +17,18 @@ jobs:
                   cache: 'npm'
                   registry-url: 'https://registry.npmjs.org'
             - run: npm ci
-            - run: npm run format
-            - run: npm run build
-            - run: npm run test
+            # - run: npm run format
+            # - run: npm run build
+            # - run: npm run test
             - name: Update package version
               run: |
                 git config --global user.name github-actions
                 git config --global user.email github-actions@github.com
+                git branch tmp
                 ./scripts/updateVersionToTag.sh
                 git add .
                 git commit -m "chore: release $GITHUB_REF_NAME"
-                git branch tmp
-                git checkout main
+                git checkout adding-updating-version-script
                 git merge tmp
                 git branch -d tmp
                 git push

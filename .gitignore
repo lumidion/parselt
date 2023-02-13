@@ -5,3 +5,4 @@ node_modules/
 *.d.ts
 test/test-directories/tmp/
 test/tmp
+./scripts/refreshTag.sh
