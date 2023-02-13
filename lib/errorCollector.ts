@@ -1,4 +1,4 @@
-import { logError, logSuccess, logWarning } from './logger'
+import { logError, logSuccess, logWarning } from './logger.js'
 
 interface IKeyScanningError {
     mainFilePath: string
@@ -85,10 +85,8 @@ export class ScanningErrorsCollector {
         if (shouldOnlyPrintSummary) {
             this.printSummary()
         } else {
-            const warningsMessage = this.warnings.length === 1 ? 'warning' : 'warnings'
-            const errorsMessage = this.errors.length === 1 ? 'error' : 'errors'
-            this.printMessageForCollection(logWarning, this.warnings, warningsMessage)
-            this.printMessageForCollection(logError, this.errors, errorsMessage)
+            this.printMessageForCollection(logWarning, this.warnings)
+            this.printMessageForCollection(logError, this.errors)
             console.log('\n')
             this.printSummary()
         }
@@ -114,7 +112,7 @@ export class ScanningErrorsCollector {
         }
     }
 
-    private printMessageForCollection(logger: (msg: string) => void, collection: IScanningError[], msgType: string) {
+    private printMessageForCollection(logger: (msg: string) => void, collection: IScanningError[]) {
         let currentFilePath = ''
         const logFileName = (filePath: string) => {
             currentFilePath = filePath
@@ -157,7 +155,7 @@ export class ScanningErrorsCollector {
                 const keysString = `Keys affected: ${error.keyNames.toString()}.`
                 return error.childKeyPath
                     ? `Key path, ${error.childKeyPath}, in file, ${error.childFilePath}, has more sub-keys than key path, ${error.mainKeyPath}, in file, ${error.mainFilePath}. ${keysString}`
-                    : `File, ${error.childFilePath} has more top-level keys than file, ${error.mainFilePath}. ${keysString}`
+                    : `File, ${error.childFilePath} has more top-level keys than file, ${error.mainFilePath} - ${keysString}`
             }
             case ScanningErrorTypes.KEY_NOT_FOUND: {
                 const keyPathStr = error.childKeyPath ? `in key path, ${error.childKeyPath},` : ''

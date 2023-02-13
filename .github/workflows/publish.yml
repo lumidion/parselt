@@ -4,17 +4,19 @@ on:
         tags:
             - 'v[0-9]+.[0-9]+.[0-9]+*'
 jobs:
-    build:
+    publish:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v1
+            - uses: actions/checkout@v3
+            - name: Use Node.js 16
+              uses: actions/setup-node@v3
               with:
-                  node-version: 14
-                  registry-url: 'https://registry.npmjs.org'
+                  node-version: 16
+                  cache: 'npm'
             - run: npm ci
-            - run: npm run test
+            - run: npm run format
             - run: npm run build
+            - run: npm run test
             - run: npm publish --access public
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
