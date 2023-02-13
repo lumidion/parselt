@@ -21,7 +21,6 @@
         "format:fix": "eslint --fix .",
         "test": "NODE_OPTIONS=--experimental-vm-modules jest",
         "test:service": "NODE_OPTIONS=--experimental-vm-modules jest --watch test/services/*Service.spec",
-        "update:version:to:tag": "node --loader ts-node/esm ./scripts/updateVersionToTag.ts",
         "clean": "node --loader ts-node/esm ./scripts/cleanNonTs.ts"
     },
     "repository": {
