@@ -77,9 +77,9 @@ If your translation files are in multiple directories (e.g. with `en/settings.js
 
 Now you're good to go with your first config file! If you have translation files in multiple places within your application, simply add more instances with a unique name per instance.
 
-## Commands
+# Commands
 
-Parselt current supports two commands (aside from init): 'scan' and 'format'. Each of these require a config file (see [Getting Started](#getting-started)) that identifies a main file or a main directory that represents the primary language of your application (e.g. `en.json` or `en/settings.json`).
+Parselt currently supports two commands (aside from 'init'): 'scan' and 'format'. Each of these requires a config file to be previously set up (see [Getting Started](#getting-started)).
 
 'Scan' will check all non-main files and compare them to the main files. It will verify that all structures are the same (e.g. that a key in `fr.json` that has an object value doesn't correspond to the same key in `en.json` which has an array value). It will then warn for all keys which are the same across translations and provide errors for any dissimilar structures, invalid values (e.g. null), or keys that are found in the main files, but not found in non-main files.
 
