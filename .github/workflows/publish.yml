@@ -25,9 +25,9 @@ jobs:
                 npm version "${GITHUB_REF_NAME:1}" --no-git-tag-version
                 git config --global user.name github-actions
                 git config --global user.email github-actions@github.com
-                git branch tmp
                 git add .
                 git commit -m "chore: release $GITHUB_REF_NAME"
+                git branch tmp
                 git checkout adding-updating-version-script
                 git merge tmp
                 git branch -d tmp
