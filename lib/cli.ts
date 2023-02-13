@@ -1,18 +1,11 @@
 import yargs, { Arguments } from 'yargs'
 import { hideBin } from 'yargs/helpers'
-import path from 'path'
 import process from 'process'
-import fs from 'fs'
-import * as url from 'url'
-
-const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
-const packageJson = fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')
-
-const { version } = JSON.parse(packageJson)
 
 import { format, init, scan } from './commands.js'
 import { ConfigLoader } from './config/ConfigLoader.js'
 import { logError } from './logger.js'
+import { getPackageVersionOrThrow } from './utils.js'
 
 const configLoader = new ConfigLoader()
 
@@ -32,9 +25,10 @@ const wrapPromiseWithErrorHandling = <A>(func: () => Promise<A>) => {
 }
 
 const initCli = () => {
+    const packageVersion = getPackageVersionOrThrow()
     yargs(hideBin(process.argv))
         .usage('Usage: $0 <command> --instance-name')
-        .version(version)
+        .version(packageVersion)
         // .command('add', 'Add translations', (yargs: any) => { //TODO re-add when testing is complete and this is stable.
         //     return yargs.command(
         //         'file',
