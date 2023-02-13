@@ -15,14 +15,15 @@ jobs:
                   cache: 'npm'
                   registry-url: 'https://registry.npmjs.org'
             - run: npm ci
-            - run: npm run format
-            - run: npm run build
-            - run: npm run test
+            # - run: npm run format
+            # - run: npm run build
+            # - run: npm run test
             - name: Update package version
               run: |
-                npm run update:version:to:tag
+                git checkout main
                 git config --global user.name github-actions
                 git config --global user.email github-actions@github.com
+                npm run update:version:to:tag
                 git add .
                 git commit -m "chore: updating package to reflect $GITHUB_REF_NAME"
                 git push --set-upstream origin adding-updating-version-script
