@@ -8,6 +8,8 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v3
+              with:
+                  fetch-depth: 0
             - name: Use Node.js 16
               uses: actions/setup-node@v3
               with:
@@ -26,7 +28,7 @@ jobs:
                 git add .
                 git commit -m "chore: updating package to reflect $GITHUB_REF_NAME"
                 git branch tmp
-                git checkout main
+                git checkout adding-updating-version-script
                 git merge tmp
                 git branch -d tmp
                 git push
