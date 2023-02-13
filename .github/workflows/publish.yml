@@ -1,9 +1,8 @@
 name: publish
 on:
     push:
-        branches: [ adding-updating-version-script ]
-        # tags:
-        #     - 'v[0-9]+.[0-9]+.[0-9]+*'
+        tags:
+            - 'v[0-9]+.[0-9]+.[0-9]+*'
 jobs:
     publish:
         runs-on: ubuntu-latest
