@@ -85,10 +85,8 @@ export class ScanningErrorsCollector {
         if (shouldOnlyPrintSummary) {
             this.printSummary()
         } else {
-            const warningsMessage = this.warnings.length === 1 ? 'warning' : 'warnings'
-            const errorsMessage = this.errors.length === 1 ? 'error' : 'errors'
-            this.printMessageForCollection(logWarning, this.warnings, warningsMessage)
-            this.printMessageForCollection(logError, this.errors, errorsMessage)
+            this.printMessageForCollection(logWarning, this.warnings)
+            this.printMessageForCollection(logError, this.errors)
             console.log('\n')
             this.printSummary()
         }
@@ -114,7 +112,7 @@ export class ScanningErrorsCollector {
         }
     }
 
-    private printMessageForCollection(logger: (msg: string) => void, collection: IScanningError[], msgType: string) {
+    private printMessageForCollection(logger: (msg: string) => void, collection: IScanningError[]) {
         let currentFilePath = ''
         const logFileName = (filePath: string) => {
             currentFilePath = filePath

@@ -60,7 +60,7 @@ describe('ConfigService', () => {
 
         it('should get config for files in multidirectory with subdirectories', async () => {
             const fileService = new FileService()
-            
+
             jest.spyOn(fileService, 'getSerializedFileMetadataFromDir').mockImplementationOnce(() => [
                 {
                     name: 'general.json',
@@ -94,20 +94,24 @@ describe('ConfigService', () => {
                 return Promise.resolve(config)
             })
 
-            jest.spyOn(fileService, 'getFirstSerializedFilePathFromDir').mockImplementationOnce(() => `${fullLangDirPath}/en/general.json`)
+            jest.spyOn(fileService, 'getFirstSerializedFilePathFromDir').mockImplementationOnce(
+                () => `${fullLangDirPath}/en/general.json`
+            )
             jest.spyOn(fileService, 'getIndentationFromSerializedFile').mockImplementation(() => 4)
             const configService = new ConfigService(fileService, userInputService)
 
             const result = await configService.getParseltConfigForRoot(rootProjectPath)
             const expectedResult: ParseltConfig = {
-                instances: [{
-                    name: 'main',
-                    isMultiDirectory: true,
-                    mainDirectoryName: 'en',
-                    indentation: 4,
-                    fileType: FileTypes.JSON,
-                    rootDirectoryPath: relativeRootProjectPath
-                }]
+                instances: [
+                    {
+                        name: 'main',
+                        isMultiDirectory: true,
+                        mainDirectoryName: 'en',
+                        indentation: 4,
+                        fileType: FileTypes.JSON,
+                        rootDirectoryPath: relativeRootProjectPath,
+                    },
+                ],
             }
             expect(result).toStrictEqual(expectedResult)
         })
@@ -147,29 +151,33 @@ describe('ConfigService', () => {
                 return Promise.resolve(config)
             })
 
-            jest.spyOn(fileService, 'getFirstSerializedFilePathFromDir').mockImplementation(() => `${fullLangDirPath}/someFileUsefulForIndentation.yaml`)
+            jest.spyOn(fileService, 'getFirstSerializedFilePathFromDir').mockImplementation(
+                () => `${fullLangDirPath}/someFileUsefulForIndentation.yaml`
+            )
             jest.spyOn(fileService, 'getIndentationFromSerializedFile').mockImplementation(() => 4)
             const configService = new ConfigService(fileService, userInputService)
 
             const result = await configService.getParseltConfigForRoot(rootProjectPath)
             const expectedResult: ParseltConfig = {
-                instances: [{
-                    name: 'main',
-                    isMultiDirectory: false,
-                    mainFileName: 'fr.yaml',
-                    indentation: 4,
-                    fileType: FileTypes.YAML,
-                    rootDirectoryPath: relativeRootProjectPath
-                },
-                {
-                    name: 'instance_1',
-                    isMultiDirectory: false,
-                    mainFileName: 'auth.fr.yaml',
-                    filePrefix: 'auth',
-                    indentation: 4,
-                    fileType: FileTypes.YAML,
-                    rootDirectoryPath: relativeRootProjectPath
-                }]
+                instances: [
+                    {
+                        name: 'main',
+                        isMultiDirectory: false,
+                        mainFileName: 'fr.yaml',
+                        indentation: 4,
+                        fileType: FileTypes.YAML,
+                        rootDirectoryPath: relativeRootProjectPath,
+                    },
+                    {
+                        name: 'instance_1',
+                        isMultiDirectory: false,
+                        mainFileName: 'auth.fr.yaml',
+                        filePrefix: 'auth',
+                        indentation: 4,
+                        fileType: FileTypes.YAML,
+                        rootDirectoryPath: relativeRootProjectPath,
+                    },
+                ],
             }
             expect(result).toStrictEqual(expectedResult)
         })
@@ -199,26 +207,30 @@ describe('ConfigService', () => {
                 return Promise.resolve(config)
             })
 
-            jest.spyOn(fileService, 'getFirstSerializedFilePathFromDir').mockImplementation(() => `${fullLangDirPath}/es.yaml`)
+            jest.spyOn(fileService, 'getFirstSerializedFilePathFromDir').mockImplementation(
+                () => `${fullLangDirPath}/es.yaml`
+            )
             jest.spyOn(fileService, 'getIndentationFromSerializedFile').mockImplementation(() => 4)
             jest.spyOn(fileService, 'getSerializedFileAsObject').mockImplementation(() => {
                 return {
-                    de: {sample: 'sample'}
+                    de: { sample: 'sample' },
                 }
-             })
+            })
             const configService = new ConfigService(fileService, userInputService)
 
             const result = await configService.getParseltConfigForRoot(rootProjectPath)
             const expectedResult: ParseltConfig = {
-                instances: [{
-                    name: 'main',
-                    isMultiDirectory: false,
-                    mainFileName: 'es.yaml',
-                    indentation: 4,
-                    fileType: FileTypes.YAML,
-                    shouldCheckFirstKey: false,
-                    rootDirectoryPath: relativeRootProjectPath
-                }]
+                instances: [
+                    {
+                        name: 'main',
+                        isMultiDirectory: false,
+                        mainFileName: 'es.yaml',
+                        indentation: 4,
+                        fileType: FileTypes.YAML,
+                        shouldCheckFirstKey: false,
+                        rootDirectoryPath: relativeRootProjectPath,
+                    },
+                ],
             }
             expect(result).toStrictEqual(expectedResult)
         })

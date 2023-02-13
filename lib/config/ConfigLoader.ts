@@ -50,6 +50,7 @@ const multiDirectorySchema: JSONSchemaType<MultiDirectoryInstanceConfig> = {
     required: ['name', 'rootDirectoryPath', 'fileType', 'indentation', 'isMultiDirectory', 'mainDirectoryName'],
     additionalProperties: true,
 }
+
 const singleDirectoryValidator = ajv.compile(singleDirectorySchema)
 const multiDirectoryValidator = ajv.compile(multiDirectorySchema)
 

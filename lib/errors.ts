@@ -1,22 +1,6 @@
 import { ScanningErrorsCollector } from './errorCollector.js'
 import { logError, logSuccess } from './logger.js'
 
-export const handleScanningErrors = (
-    errorCollector: ScanningErrorsCollector,
-    instanceName: string,
-    shouldPrintResultSummaryOnly?: boolean
-) => {
-    handleErrors({ actionName: 'scanning', errorCollector, instanceName, shouldPrintResultSummaryOnly })
-}
-
-export const handleFormattingErrors = (
-    errorCollector: ScanningErrorsCollector,
-    instanceName: string,
-    shouldPrintResultSummaryOnly?: boolean
-) => {
-    handleErrors({ actionName: 'formatting', errorCollector, instanceName, shouldPrintResultSummaryOnly })
-}
-
 interface HandleErrorsParams {
     actionName: string
     errorCollector: ScanningErrorsCollector
@@ -39,4 +23,20 @@ const handleErrors = ({
     if (errorCollector.hasErrors()) {
         logError(`Found errors when ${actionName} files for ${instanceName} instance`)
     }
+}
+
+export const handleScanningErrors = (
+    errorCollector: ScanningErrorsCollector,
+    instanceName: string,
+    shouldPrintResultSummaryOnly?: boolean
+) => {
+    handleErrors({ actionName: 'scanning', errorCollector, instanceName, shouldPrintResultSummaryOnly })
+}
+
+export const handleFormattingErrors = (
+    errorCollector: ScanningErrorsCollector,
+    instanceName: string,
+    shouldPrintResultSummaryOnly?: boolean
+) => {
+    handleErrors({ actionName: 'formatting', errorCollector, instanceName, shouldPrintResultSummaryOnly })
 }

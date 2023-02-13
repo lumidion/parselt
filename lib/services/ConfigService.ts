@@ -3,11 +3,6 @@ import { FileMetadata, FileService } from './FileService.js'
 import { allLanguageCodes, priorityLangs } from './languageCodes.js'
 import { UserInputService } from './UserInputService.js'
 
-interface ConfigMetadata {
-    uniqueLanguageCodes: string[]
-    instances: RawInstance[]
-}
-
 interface ScannedFile {
     languageCode: string
     parentPath: string
@@ -21,6 +16,11 @@ interface RawInstance {
     files: ScannedFile[]
     isMultiDirectory: boolean
     filePrefix?: string
+}
+
+interface ConfigMetadata {
+    uniqueLanguageCodes: string[]
+    instances: RawInstance[]
 }
 
 interface LanguageCodeRegex {

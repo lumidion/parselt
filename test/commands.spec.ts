@@ -9,9 +9,12 @@ import fs from 'fs'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 const scanWithErrorsFolderPath = path.join(__dirname, 'test-directories', 'scanning-tests', 'normal-scan-with-errors')
-const mainNormalScanWithErrorsTemplate = JSON.parse(fs.readFileSync(path.join(scanWithErrorsFolderPath, 'mainTemplate.json'), 'utf8'))
-const childNormalScanWithErrorsTemplate = JSON.parse(fs.readFileSync(path.join(scanWithErrorsFolderPath, 'childTemplate.json'), 'utf8'))
-
+const mainNormalScanWithErrorsTemplate = JSON.parse(
+    fs.readFileSync(path.join(scanWithErrorsFolderPath, 'mainTemplate.json'), 'utf8')
+)
+const childNormalScanWithErrorsTemplate = JSON.parse(
+    fs.readFileSync(path.join(scanWithErrorsFolderPath, 'childTemplate.json'), 'utf8')
+)
 
 describe('Commands', () => {
     afterAll(() => {
