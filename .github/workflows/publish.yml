@@ -22,9 +22,9 @@ jobs:
             - run: npm run test
             - name: Update package version
               run: |
-                ./scripts/updateVersionToTag.sh
                 git config --global user.name github-actions
                 git config --global user.email github-actions@github.com
+                ./scripts/updateVersionToTag.sh
                 git add .
                 git commit -m "chore: release $GITHUB_REF_NAME"
                 git branch tmp
