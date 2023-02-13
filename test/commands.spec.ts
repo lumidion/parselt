@@ -3,9 +3,15 @@ import { scan } from '../lib/commands'
 import { testFormatting } from './test-utils/testFormatting'
 import { FileTypes, InstanceConfig } from '../lib/config/config'
 import { setupEmptyDirsWithConfig, setupScanningTest } from './test-utils/setupAndTeardown'
-import mainNormalScanWithErrorsTemplate from './test-directories/scanning-tests/normal-scan-with-errors/mainTemplate.json'
-import childNormalScanWithErrorsTemplate from './test-directories/scanning-tests/normal-scan-with-errors/childTemplate.json'
+import path from 'path'
+import url from 'url'
 import fs from 'fs'
+
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
+const scanWithErrorsFolderPath = path.join(__dirname, 'test-directories', 'scanning-tests', 'normal-scan-with-errors')
+const mainNormalScanWithErrorsTemplate = JSON.parse(fs.readFileSync(path.join(scanWithErrorsFolderPath, 'mainTemplate.json'), 'utf8'))
+const childNormalScanWithErrorsTemplate = JSON.parse(fs.readFileSync(path.join(scanWithErrorsFolderPath, 'childTemplate.json'), 'utf8'))
+
 
 describe('Commands', () => {
     afterAll(() => {

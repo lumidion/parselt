@@ -19,8 +19,9 @@
         "build": "tsc",
         "format": "eslint .",
         "format:fix": "eslint --fix .",
-        "test": "jest",
-        "test:service": "NODE_OPTIONS=--experimental-vm-modules jest --watch test/services/*Service.spec",
+        "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+        "test:service": "NODE_OPTIONS=--experimental-vm-modules jest --watch test/services/FileService.spec",
+        "test:commands": "NODE_OPTIONS=--experimental-vm-modules jest --watch test/commands.spec",
         "clean": "node --loader ts-node/esm ./scripts/cleanNonTs.ts"
     },
     "repository": {

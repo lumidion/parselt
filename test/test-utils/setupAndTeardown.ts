@@ -6,7 +6,7 @@ import { createScanConfigFromDirName } from './config'
 import * as uuid from 'uuid'
 
 const writeObjectToFile = (obj: any, path: string, indentation: Indentation) => {
-    const fileType = FileService.getFileTypeForFile(path)
+    const fileType = FileService.getSerializedFileType(path)
     if (fileType === FileTypes.JSON) {
         const json = JSON.stringify(obj, undefined, indentation)
         fs.writeFileSync(path, json)
