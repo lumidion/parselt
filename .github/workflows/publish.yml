@@ -25,7 +25,7 @@ jobs:
                 git config --global user.email github-actions@github.com
                 git add .
                 git commit -m "chore: updating package to reflect $GITHUB_REF_NAME"
-                git push
+                git push origin --set-upstream-origin adding-updating-version-script
             # - run: npm publish --access public
             #   env:
             #       NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
