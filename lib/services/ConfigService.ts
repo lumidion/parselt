@@ -72,14 +72,14 @@ export class ConfigService {
             fileRegexes.push({ regex: new RegExp(`\\.${languageCode}\\.`), languageCode, indicatesFilePrefix: true }) // TODO: this is to support prefixes, but we don't currently support this completely.
         })
 
+        const instanceStore: Record<string, RawInstance> = {}
+        const instancePaths: string[] = []
+
         const updateLanguageCodes = (languageCode: string, directoryPath: string): void => {
             if (!instanceStore[directoryPath].languagesCodesFound.includes(languageCode)) {
                 instanceStore[directoryPath].languagesCodesFound.push(languageCode)
             }
         }
-
-        const instanceStore: Record<string, RawInstance> = {}
-        const instancePaths: string[] = []
 
         files.forEach((file) => {
             let isDirectoryFound = false
