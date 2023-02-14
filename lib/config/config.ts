@@ -122,7 +122,7 @@ export interface FormatConfig {
      * May be helpful to set to false in certain cases for scripting
      * @default true
      */
-    shouldLogOutput?: boolean
+    shouldLogOutput: boolean
 }
 
 export interface AddTranslationFileConfig {
