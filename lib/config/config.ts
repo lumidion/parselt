@@ -28,14 +28,6 @@ interface CoreInstanceConfig {
     shouldCheckFirstKey?: boolean
 
     /**
-     * If you only want the metrics on the number of errors and warnings that the project generates, set this flag to 'true'
-     *
-     * @default false
-     */
-
-    shouldPrintResultSummaryOnly?: boolean
-
-    /**
      * The kind of the file that the translations use. Only json or yaml types are supported and they are not supported when mixed (e.g. en.json and fr.yaml will throw an error)
      */
     fileType: FileTypes
@@ -91,22 +83,39 @@ export interface ParseltConfig {
     instances: InstanceConfig[]
 }
 
-export interface ScanConfig extends ParseltConfig {
-    /**
-     * Whether the command should log any output, such as summaries of errors or warnings.
-     * May be helpful to set to false in certain cases for scripting
-     * @default true
-     */
-    shouldLogOutput: boolean
+export enum ScanOutputLogTypes {
+    ALL = 'all',
+    ERRORS = 'errors',
+    NONE = 'none',
+    SUMMARY = 'summary',
+    WARNINGS = 'warnings',
 }
 
-export interface FormatConfig extends ParseltConfig {
+export interface ScanConfig {
+    /**
+     * Core parselt config, generally parsed from the main config file
+     */
+    rootConfig: ParseltConfig
+
+    /**
+     * Which output a command should log, such as summaries of errors or warnings.
+     * May be helpful to set to false in certain cases for scripting
+     * @default ScanOutputLogTypes.ALL
+     */
+    outputLogType: ScanOutputLogTypes
+}
+
+export interface FormatConfig {
+    /**
+     * Core parselt config, generally parsed from the main config file
+     */
+    rootConfig: ParseltConfig
     /**
      * Should the format command remove any extra keys found in the child files
      * For instance if the main file is {"key1": 1} and the child file is {"key1": 1, "key2": 2}, key2 will be removed from the child file
      * @default false
      */
-    shouldRemoveExtras: boolean
+    shouldRemoveExtras?: boolean
 
     /**
      * Whether the command should log any output, such as summaries of errors or warnings.

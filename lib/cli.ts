@@ -91,10 +91,23 @@ const initCli = () => {
             'scan',
             'Scan translation files for errors and warnings',
             (yargs) => {
-                return yargs.options('instance-name', {
-                    describe: 'Instance name to which the scan should pertain',
-                    type: 'string',
-                })
+                return yargs
+                    .option('instance-name', {
+                        describe: 'Instance name to which the scan should pertain',
+                        type: 'string',
+                    })
+                    .option('errors', {
+                        describe: 'Whether the service should only log errors',
+                        type: 'boolean',
+                    })
+                    .option('warnings', {
+                        describe: 'Whether the service should only log warnings',
+                        type: 'boolean',
+                    })
+                    .option('summary', {
+                        describe: 'Whether the service should only log a summary of both errors and warnings',
+                        type: 'boolean',
+                    })
             },
             (argv: Arguments) => {
                 const config = configLoader.loadScanConfig(argv)

@@ -1,3 +1,4 @@
+import { ScanOutputLogTypes } from './config/config.js'
 import { logError, logSuccess, logWarning } from './logger.js'
 
 interface IKeyScanningError {
@@ -81,24 +82,54 @@ export class ScanningErrorsCollector {
         return this.errors.length > 0
     }
 
-    printAll(shouldOnlyPrintSummary: boolean): void {
-        if (shouldOnlyPrintSummary) {
-            this.printSummary()
-        } else {
-            this.printMessageForCollection(logWarning, this.warnings)
-            this.printMessageForCollection(logError, this.errors)
-            console.log('\n')
-            this.printSummary()
+    printAll(outputLogType: ScanOutputLogTypes, instanceName: string): void {
+        switch (outputLogType) {
+            case ScanOutputLogTypes.SUMMARY:
+                this.printStart(instanceName)
+                this.printSummary()
+                break
+            case ScanOutputLogTypes.ALL:
+                this.printStart(instanceName)
+                this.printMessageForCollection(logWarning, this.warnings)
+                this.printMessageForCollection(logError, this.errors)
+                console.log('\n')
+                this.printSummary()
+                break
+            case ScanOutputLogTypes.ERRORS:
+                this.printStart(instanceName)
+                this.printMessageForCollection(logError, this.errors)
+                this.printErrorSummary()
+                break
+            case ScanOutputLogTypes.WARNINGS:
+                this.printStart(instanceName)
+                this.printMessageForCollection(logWarning, this.warnings)
+                this.printWarningSummary()
+                break
+            case ScanOutputLogTypes.NONE:
+                break
         }
     }
 
+    private printStart(instanceName: string) {
+        console.log('\n')
+        logSuccess(`Starting scan for ${instanceName} instance`)
+    }
+
     private printSummary() {
-        logWarning(`${this.warnings.length} warnings found in project`)
+        this.printWarningSummary()
+        this.printErrorSummary()
+    }
+
+    private printErrorSummary() {
         if (this.hasErrors()) {
             logError(`${this.errors.length} errors found in project`)
         } else {
             logSuccess('Success! No errors found')
         }
+    }
+
+    private printWarningSummary() {
+        logWarning(`${this.warnings.length} warnings found in project`)
     }
 
     private isErrorFileType(error: IScanningError): error is IFileError {

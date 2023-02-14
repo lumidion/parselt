@@ -1,5 +1,5 @@
 import { IScanResult, ScanningService } from './services/ScanningService.js'
-import { FormatConfig, ParseltConfig, ScanConfig } from './config/config.js'
+import { FormatConfig, ParseltConfig, ScanConfig, ScanOutputLogTypes } from './config/config.js'
 import { FileService } from './services/FileService.js'
 import {
     IGreaterNumberOfKeysError,
@@ -7,7 +7,6 @@ import {
     ScanningErrorsCollector,
     ScanningErrorTypes,
 } from './errorCollector.js'
-import { handleFormattingErrors, handleScanningErrors } from './errors.js'
 import { KeyModifierService } from './services/KeyModifierService.js'
 import { logSuccess, logTable } from './logger.js'
 import { FormattingService } from './services/FormattingService.js'
@@ -22,7 +21,7 @@ import { UserInputService } from './services/UserInputService.js'
  * @returns void
  */
 export const format = (config: FormatConfig) => {
-    config.instances.forEach((instanceConfig) => {
+    config.rootConfig.instances.forEach((instanceConfig) => {
         const errorCollector = new ScanningErrorsCollector()
         const fileService = new FileService(errorCollector)
         const formattingService = new FormattingService(fileService)
@@ -99,7 +98,7 @@ export const format = (config: FormatConfig) => {
             }
         }
         if (config.shouldLogOutput) {
-            handleFormattingErrors(errorCollector, instanceConfig.name, instanceConfig.shouldPrintResultSummaryOnly)
+            logSuccess('Formatting successfully completed')
         }
     })
 }
@@ -113,22 +112,22 @@ export const format = (config: FormatConfig) => {
 export const scan = (config: ScanConfig): IScanResult => {
     let errors: IScanningError[] = []
     let warnings: IScanningError[] = []
-    config.instances.forEach((instanceConfig) => {
+    config.rootConfig.instances.forEach((instanceConfig) => {
         const errorCollector = new ScanningErrorsCollector()
         const fileService = new FileService(errorCollector)
         const scanningService = new ScanningService(errorCollector, fileService)
         if (instanceConfig.isMultiDirectory) {
             scanningService.compareDirectories(instanceConfig)
-            if (config.shouldLogOutput) {
-                handleScanningErrors(errorCollector, instanceConfig.name, instanceConfig.shouldPrintResultSummaryOnly)
+            if (config.outputLogType) {
+                errorCollector.printAll(config.outputLogType, instanceConfig.name)
             }
 
             errors = errors.concat(errorCollector.getAllErrors())
             warnings = warnings.concat(errorCollector.getAllWarnings())
         } else {
             scanningService.compareFiles(instanceConfig)
-            if (config.shouldLogOutput) {
-                handleScanningErrors(errorCollector, instanceConfig.name, instanceConfig.shouldPrintResultSummaryOnly)
+            if (config.outputLogType !== ScanOutputLogTypes.NONE) {
+                errorCollector.printAll(config.outputLogType, instanceConfig.name)
             }
 
             errors = errors.concat(errorCollector.getAllErrors())

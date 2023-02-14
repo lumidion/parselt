@@ -1,12 +1,11 @@
 import fs from 'fs'
 import {
-    AddTranslationFileConfig,
     FileTypes,
     FormatConfig,
-    InstanceConfig,
     MultiDirectoryInstanceConfig,
     ParseltConfig,
     ScanConfig,
+    ScanOutputLogTypes,
     SingleDirectoryInstanceConfig,
 } from './config.js'
 
@@ -24,7 +23,6 @@ const singleDirectorySchema: JSONSchemaType<SingleDirectoryInstanceConfig> = {
         name: { type: 'string' },
         rootDirectoryPath: { type: 'string' },
         shouldCheckFirstKey: { type: 'boolean', nullable: true },
-        shouldPrintResultSummaryOnly: { type: 'boolean', nullable: true },
         fileType: { type: 'string', enum: Object.values(FileTypes) },
         indentation: { type: 'number' },
         isMultiDirectory: { type: 'boolean' },
@@ -42,7 +40,6 @@ const multiDirectorySchema: JSONSchemaType<MultiDirectoryInstanceConfig> = {
         rootDirectoryPath: { type: 'string' },
         mainDirectoryName: { type: 'string' },
         shouldCheckFirstKey: { type: 'boolean', nullable: true },
-        shouldPrintResultSummaryOnly: { type: 'boolean', nullable: true },
         fileType: { type: 'string', enum: Object.values(FileTypes) },
         indentation: { type: 'number' },
         isMultiDirectory: { type: 'boolean' },
@@ -54,23 +51,23 @@ const multiDirectorySchema: JSONSchemaType<MultiDirectoryInstanceConfig> = {
 const singleDirectoryValidator = ajv.compile(singleDirectorySchema)
 const multiDirectoryValidator = ajv.compile(multiDirectorySchema)
 
-const parseDirectoriesOption = (directories: unknown): string[] | undefined => {
-    if (directories !== undefined) {
-        if (Array.isArray(directories)) {
-            directories.forEach((dir) => {
-                if (typeof dir !== 'string') {
-                    throw new Error(`Invalid input for directory: ${dir}. --directories must be an array of strings`)
-                }
-            })
-        } else {
-            throw new Error(
-                `Invalid input for directories. Type of input was not an array. --directories must be an array of strings.`
-            )
-        }
-    } else {
-        return undefined
-    }
-}
+// const parseDirectoriesOption = (directories: unknown): string[] | undefined => {
+//     if (directories !== undefined) {
+//         if (Array.isArray(directories)) {
+//             directories.forEach((dir) => {
+//                 if (typeof dir !== 'string') {
+//                     throw new Error(`Invalid input for directory: ${dir}. --directories must be an array of strings`)
+//                 }
+//             })
+//         } else {
+//             throw new Error(
+//                 `Invalid input for directories. Type of input was not an array. --directories must be an array of strings.`
+//             )
+//         }
+//     } else {
+//         return undefined
+//     }
+// }
 
 export class ConfigLoader {
     private readonly configPath: string
@@ -107,7 +104,7 @@ export class ConfigLoader {
         }
     }
 
-    private filterInstancesByInstanceName(instanceName: string | undefined, config: ParseltConfig): InstanceConfig[] {
+    private filterInstancesByInstanceName(instanceName: string | undefined, config: ParseltConfig): ParseltConfig {
         if (instanceName !== undefined) {
             const finalInstances = instanceName
                 ? config.instances.filter((instance) => instance.name === instanceName)
@@ -118,43 +115,65 @@ export class ConfigLoader {
                     `${instanceName} invalid. Valid instance names from config: ${instanceNames.join(', ')}`
                 )
             } else {
-                return finalInstances
+                return {
+                    instances: finalInstances,
+                }
             }
         } else {
-            return config.instances
+            return config
         }
     }
 
     loadFormatConfig(argv: any): FormatConfig {
         const mainConfig = this.loadConfigFromFile(this.configPath)
         const finalConfig: FormatConfig = {
-            instances: this.filterInstancesByInstanceName(argv?.instanceName, mainConfig),
+            rootConfig: this.filterInstancesByInstanceName(argv?.instanceName, mainConfig),
             shouldLogOutput: argv?.shouldLogOutput ? argv?.shouldLogOuput : true,
             shouldRemoveExtras: argv?.removeExtras ? argv.removeExtras : false,
         }
         return finalConfig
     }
 
-    loadAddTranslationFileConfig(argv: any): AddTranslationFileConfig {
-        const mainConfig = this.loadConfigFromFile(this.configPath)
-        const instance = this.filterInstancesByInstanceName(argv?.instanceName, mainConfig)[0]
-        if (instance.isMultiDirectory === true) {
-            const finalConfig: AddTranslationFileConfig = {
-                instance,
-                fileName: argv?.fileName,
-                directories: parseDirectoriesOption(argv?.directories),
-            }
-            return finalConfig
+    // loadAddTranslationFileConfig(argv: any): AddTranslationFileConfig {
+    //     const mainConfig = this.loadConfigFromFile(this.configPath)
+    //     const instance = this.filterInstancesByInstanceName(argv?.instanceName, mainConfig)[0]
+    //     if (instance.isMultiDirectory === true) {
+    //         const finalConfig: AddTranslationFileConfig = {
+    //             instance,
+    //             fileName: argv?.fileName,
+    //             directories: parseDirectoriesOption(argv?.directories),
+    //         }
+    //         return finalConfig
+    //     } else {
+    //         throw new Error(`Instance with instance name, ${instance.name}, must be a multidirectory instance`)
+    //     }
+    // }
+
+    private parseScanLogTypeOrThrow(argv: any): ScanOutputLogTypes {
+        const shouldLogAllErrors = argv?.errors && typeof argv.errors === 'boolean'
+        const shouldLogAllWarnings = argv?.warnings && typeof argv.warnings === 'boolean'
+        const shouldLogSummary = argv?.summary && typeof argv.summary === 'boolean'
+
+        if (shouldLogSummary && !shouldLogAllErrors && !shouldLogAllWarnings) {
+            return ScanOutputLogTypes.SUMMARY
+        } else if (shouldLogSummary && (shouldLogAllErrors || shouldLogAllWarnings)) {
+            throw new Error('--summary option cannot be passed with either --errors or --warnings options')
+        } else if (shouldLogAllErrors && shouldLogAllWarnings) {
+            return ScanOutputLogTypes.ALL
+        } else if (shouldLogAllErrors) {
+            return ScanOutputLogTypes.ERRORS
+        } else if (shouldLogAllWarnings) {
+            return ScanOutputLogTypes.WARNINGS
         } else {
-            throw new Error(`Instance with instance name, ${instance.name}, must be a multidirectory instance`)
+            return ScanOutputLogTypes.ALL
         }
     }
 
     loadScanConfig(argv: any): ScanConfig {
         const mainConfig = this.loadConfigFromFile(this.configPath)
         const finalConfig: ScanConfig = {
-            instances: this.filterInstancesByInstanceName(argv?.instanceName, mainConfig),
-            shouldLogOutput: argv?.shouldLogOutput ? argv?.shouldLogOuput : true,
+            rootConfig: this.filterInstancesByInstanceName(argv?.instanceName, mainConfig),
+            outputLogType: this.parseScanLogTypeOrThrow(argv),
         }
         return finalConfig
     }

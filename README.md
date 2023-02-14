@@ -12,10 +12,6 @@ Parselt assumes that a project has a single main language that is the source of 
 
 Parselt supports users configuring one or more "instances" within their project. An instance represents a folder that contains a set of languages for a particular use case and has certain properties (e.g. it divides languages by subdirectories with the name of the language - multidirectories - or by filename with the name of the language - en.json, fr.json, etc.). Most projects will only have one instance, but some larger projects can have several.
 
-# When to use
-
-Parselt will work for applications of all sizes, but medium-to-large applications will see the most benefit. Unsurprisingly, as applications gain more keys and more languages, there is more potential for clutter, which is where parselt excels.
-
 # Getting Started
 
 ## Installation
@@ -39,7 +35,7 @@ Create a `parselt.json` file at the root of your project with the following prop
 
 ```json5
 {
-    instances: [],
+    "instances": [],
 }
 ```
 
@@ -50,7 +46,6 @@ Now add your first instance with basic properties to the "instances" array:
         "name": "string", // e.g. "main". Must be unique per instance
         "rootDirectoryPath": "string", //e.g. "./src/i18n",
         "shouldCheckFirstKey": "boolean", // default: true. Set to false if the first key in the file is not something that is referenced (e.g. your structure is something like, {"EN": {"SETTINGS_TITLE": "Settings"}}, but you only reference the "SETTINGS" key, instead of the full path, "EN.SETTINGS").
-        "shouldPrintResultSummaryOnly": "boolean", // default: false
         "fileType": "json | yaml",
         "indentation": 2 | 4,
 }
