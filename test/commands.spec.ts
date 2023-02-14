@@ -1,7 +1,7 @@
 import { createScanConfigFromDirPath } from './test-utils/config'
 import { scan } from '../lib/commands'
 import { testFormatting } from './test-utils/testFormatting'
-import { FileTypes, InstanceConfig } from '../lib/config/config'
+import { FileTypes, InstanceConfig, ScanOutputLogTypes } from '../lib/config/config'
 import { setupEmptyDirsWithConfig, setupScanningTest } from './test-utils/setupAndTeardown'
 import path from 'path'
 import url from 'url'
@@ -24,7 +24,7 @@ describe('Commands', () => {
         it('when scanning empty directories should return appropriate errors', () => {
             setupEmptyDirsWithConfig('empty-dir-test')((config, testRootPath) => {
                 fs.rmSync(`${testRootPath}/multi-json-dir/en`, { recursive: true, force: true })
-                const result = scan({ instances: config.instances, shouldLogOutput: false })
+                const result = scan({ rootConfig: config, outputLogType: ScanOutputLogTypes.NONE })
                 expect(result.errors).toStrictEqual([
                     {
                         msg: 'File could not be parsed for scanning. Please make sure that the file exists and that the json structure is correct.',
@@ -67,7 +67,7 @@ describe('Commands', () => {
         })
         it('when scanning broken files should return appropriate errors', () => {
             const config = createScanConfigFromDirPath('./test/test-directories/scanning-tests/broken-file-test')
-            const result = scan({ instances: config.instances, shouldLogOutput: false })
+            const result = scan({ rootConfig: config, outputLogType: ScanOutputLogTypes.NONE })
             expect(result.errors).toStrictEqual([
                 {
                     type: 'could_not_load_path',
@@ -118,7 +118,10 @@ describe('Commands', () => {
                     instance,
                 ])
                 it.each([...configsForTest])('should return relevant errors for %s test', (_, instance) => {
-                    const result = scan({ instances: [instance], shouldLogOutput: false })
+                    const result = scan({
+                        rootConfig: { instances: [instance] },
+                        outputLogType: ScanOutputLogTypes.NONE,
+                    })
 
                     const mainFilePath = instance.isMultiDirectory
                         ? `${instance.rootDirectoryPath}/${instance.mainDirectoryName}/general.${instance.fileType}`

@@ -14,7 +14,7 @@ export const testFormatting = (config: SingleDirectoryInstanceConfig, testName: 
 
     const convertedConfig = JSON.parse(JSON.stringify(config)) as InstanceConfig
     convertedConfig.rootDirectoryPath = destDirPath
-    format({ instances: [convertedConfig], shouldLogOutput: false, shouldRemoveExtras: false })
+    format({ rootConfig: { instances: [convertedConfig] }, shouldLogOutput: false, shouldRemoveExtras: false })
     const file = fs.readFileSync(destFilePath, 'utf8')
 
     return file
