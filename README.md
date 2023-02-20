@@ -1,5 +1,8 @@
 # Parselt
 
+![Build Status](https://github.com/lumidion/parselt/actions/workflows/main_check.yml/badge.svg)
+[![npm version](https://badge.fury.io/js/@lumidion%2Fparselt.svg)](https://badge.fury.io/js/@lumidion%2Fparselt)
+
 Parselt (a shortened form of parseltongue) is a library for updating and linting translation files in json or yaml. To get started, see [Getting Started](#getting-started).
 
 # Basic Concepts
