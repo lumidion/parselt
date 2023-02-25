@@ -73,9 +73,8 @@ const initCli = () => {
             (yargs) => {
                 return yargs
                     .option('remove-extras', {
-                        describe: 'File name for the file that should be added',
-                        type: 'string',
-                        requiresArg: true,
+                        describe: "Should keys that don't correspond to the main language be removed",
+                        type: 'boolean',
                     })
                     .option('instance-name', {
                         describe: 'Instance name to which the formatting should pertain',
